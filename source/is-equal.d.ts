@@ -25,7 +25,21 @@ type Includes<Value extends readonly any[], Item> =
 @category Utilities
 */
 export type IsEqual<A, B> =
+	_NonNever<A> extends [infer HeadA, ...infer TailA]
+		? _NonNever<B> extends [infer HeadB, ...infer TailB]
+			? IsEqual<HeadA, HeadB> extends true
+				? [] extends TailA & TailB
+					? IsEqual<TailA, TailB>
+					: false
+				: false
+			: _IsEqual<A, B>
+		: _IsEqual<A, B>;
+
+export type _IsEqual<A, B> =
 	(<G>() => G extends A & G | G ? 1 : 2) extends
 	(<G>() => G extends B & G | G ? 1 : 2)
 		? true
 		: false;
+
+// NonNullable is not appropriate for removing only never, as it also removes undefined, which causes test/includes.ts to fail.
+type _NonNever<A> = (<G>() => G extends A & G | G ? 1 : 2) extends (<G>() => G extends never & G | G ? 1 : 2) ? 0 : A;
