@@ -22,6 +22,35 @@ expectType<false>(notEqualArrayOfAnyAndArrayOfNever);
 const equalNeverAndNever: IsEqual<never, never> = true;
 expectType<true>(equalNeverAndNever);
 
+const equalEmptyArrayAndEmptyArray: IsEqual<[], []> = true;
+expectType<true>(equalEmptyArrayAndEmptyArray);
+
+const equalReadonlyEmptyArrayAndReadonlyEmptyArray: IsEqual<readonly [], readonly []> = true;
+expectType<true>(equalReadonlyEmptyArrayAndReadonlyEmptyArray);
+
+const notEqualReadonlyEmptyArrayAndReadonlyEmptyArray: IsEqual<readonly [], []> = false;
+expectType<false>(notEqualReadonlyEmptyArrayAndReadonlyEmptyArray);
+
+const equalArrayNumberAndArrayNumber: IsEqual<number[], number[]> = true;
+expectType<true>(equalArrayNumberAndArrayNumber);
+
+const equalReadonlyArrayNumberAndReadonlyArrayNumber: IsEqual<readonly number[], readonly number[]> = true;
+expectType<true>(equalReadonlyArrayNumberAndReadonlyArrayNumber);
+
+const notEqualReadonlyArrayNumberAndReadonlyArrayNumber: IsEqual<readonly number[], number[]> = false;
+expectType<false>(notEqualReadonlyArrayNumberAndReadonlyArrayNumber);
+
+type LongTupleNumber = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
+const equalLongTupleNumberAndLongTupleNumber: IsEqual<LongTupleNumber, LongTupleNumber> = true;
+expectType<true>(equalLongTupleNumberAndLongTupleNumber);
+
+type ReadonlyLongTupleNumber = readonly [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
+const equalLongReadonlyTupleNumberAndLongReadonlyTupleNumber: IsEqual<ReadonlyLongTupleNumber, ReadonlyLongTupleNumber> = true;
+expectType<true>(equalLongReadonlyTupleNumberAndLongReadonlyTupleNumber);
+
+const notEqualLongTupleNumberAndLongTupleNumber: IsEqual<readonly [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]> = false;
+expectType<false>(notEqualLongTupleNumberAndLongTupleNumber);
+
 // Missing all generic parameters.
 // @ts-expect-error
 type A = IsEqual;
@@ -37,18 +66,20 @@ expectType<UnionType>(true);
 type IntersectionType = IsEqual<{a: 1} | {a: 1}, {a: 1}>; // eslint-disable-line @typescript-eslint/no-duplicate-type-constituents
 expectType<IntersectionType>(true);
 
-type __TupleReturnValueTupleBool_wraped0<Fst> = (Fst extends [[0, 2]] ? ['A', true] : ['A', false]);
-type __TupleReturnValueTupleBool_wraped1<Fst> = (Fst extends [[0, 1]] ? ['A', true] : ['A', false]);
+// Test for PR https://github.com/sindresorhus/type-fest/pull/1231
+type BranchOnWrappedTupleMatches<Tpl> = (Tpl extends [[0, 2]] ? ['A', true] : ['A', false]);
+type BranchOnWrappedTupleDoesNotMatch<Tpl> = (Tpl extends [[0, 1]] ? ['A', true] : ['A', false]);
+type BranchOnTupleMatches<Tpl> = (Tpl extends [0, 2] ? ['A', true] : ['A', false]);
+type BranchOnTupleDoesNotMatch<Tpl> = (Tpl extends [0, 1] ? ['A', true] : ['A', false]);
 
-const equalWrapedTupleIntersecToBeNeverAndNever: IsEqual<(__TupleReturnValueTupleBool_wraped0<[[0, 2]]> & __TupleReturnValueTupleBool_wraped1<[[0, 2]]>), never> = true;
-expectType<true>(equalWrapedTupleIntersecToBeNeverAndNever);
-const equalWrapedTupleIntersecToBeNeverAndNeverExpanded: [0, 2] extends infer Fst ? IsEqual<(__TupleReturnValueTupleBool_wraped0<[Fst]> & __TupleReturnValueTupleBool_wraped1<[Fst]>), never> : never = true;
-expectType<true>(equalWrapedTupleIntersecToBeNeverAndNeverExpanded);
+const equalWrappedTupleIntersectionToBeNeverAndNever: IsEqual<(BranchOnWrappedTupleMatches<[[0, 2]]> & BranchOnWrappedTupleDoesNotMatch<[[0, 2]]>), never> = true;
+expectType<true>(equalWrappedTupleIntersectionToBeNeverAndNever);
 
-type __TupleReturnValueTupleBool0<Fst> = (Fst extends [0, 2] ? ['A', true] : ['A', false]);
-type __TupleReturnValueTupleBool1<Fst> = (Fst extends [0, 1] ? ['A', true] : ['A', false]);
+const equalWrappedTupleIntersectionToBeNeverAndNeverExpanded: [0, 2] extends infer Tpl ? IsEqual<(BranchOnWrappedTupleMatches<[Tpl]> & BranchOnWrappedTupleDoesNotMatch<[Tpl]>), never> : never = true;
+expectType<true>(equalWrappedTupleIntersectionToBeNeverAndNeverExpanded);
 
-const equalTupleIntersecToBeNeverAndNever: IsEqual<(__TupleReturnValueTupleBool0<[0, 2]> & __TupleReturnValueTupleBool1<[0, 2]>), never> = true;
-expectType<true>(equalTupleIntersecToBeNeverAndNever);
-const equalTupleIntersecToBeNeverAndNeverExpanded: [0, 2] extends infer Fst ? IsEqual<(__TupleReturnValueTupleBool0<Fst> & __TupleReturnValueTupleBool1<Fst>), never> : never = true;
-expectType<true>(equalTupleIntersecToBeNeverAndNeverExpanded);
+const equalTupleIntersectionToBeNeverAndNever: IsEqual<(BranchOnTupleMatches<[0, 2]> & BranchOnTupleDoesNotMatch<[0, 2]>), never> = true;
+expectType<true>(equalTupleIntersectionToBeNeverAndNever);
+
+const equalTupleIntersectionToBeNeverAndNeverExpanded: [0, 2] extends infer Tpl ? IsEqual<(BranchOnTupleMatches<Tpl> & BranchOnTupleDoesNotMatch<Tpl>), never> : never = true;
+expectType<true>(equalTupleIntersectionToBeNeverAndNeverExpanded);
