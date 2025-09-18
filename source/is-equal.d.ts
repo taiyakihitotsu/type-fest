@@ -25,10 +25,10 @@ type Includes<Value extends readonly any[], Item> =
 @category Type Guard
 @category Utilities
 */
-export type IsEqual<A, B> =
-	[A, B] extends [infer A, infer B]
-		? _IsEqual<A, B>
-		: false;
+// export type IsEqual<A, B> =
+// 	[A, B] extends [infer A, infer B]
+// 		? _IsEqual<A, B>
+// 		: false;
 
 // This version fails the `equalWrappedTupleIntersectionToBeNeverAndNeverExpanded` test in `test-d/is-equal.ts`.
 type _IsEqual<A, B> =
@@ -36,3 +36,17 @@ type _IsEqual<A, B> =
 	(<G>() => G extends B & G | G ? 1 : 2)
 		? true
 		: false;
+
+export type IsEqual<A, B> =
+	_NonNeverId<A> extends [infer HeadA, ...infer TailA]
+		? _NonNeverId<B> extends [infer HeadB, ...infer TailB]
+			? IsEqual<HeadA, HeadB> extends true
+				? IsEqual<TailA, TailB>
+				: false
+			: _IsEqual<A, B>
+		: _IsEqual<A, B>;
+
+type _NonNeverId<T> =
+	true extends IsNever<T>
+		? 0
+		: T;
