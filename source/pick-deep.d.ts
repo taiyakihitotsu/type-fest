@@ -132,18 +132,43 @@ type PickDeepObject<RecordType extends object, P extends string | number, ContPa
 			: 'never1'
     : _PickDeepObject<RecordType, P, ContPath>
 
-type _MergeArray<A, B> = 
+
+// -- merge tuple
+// This is used for an inner function of merge object shrinkly.
+type _MergeTuple<A, B> = 
   A extends [infer HeadA, ...infer RestA]
     ? B extends [infer HeadB, ...infer RestB]
-      ? [HeadA & HeadB, ..._MergeArray<RestA, RestB>]
+      ? [HeadA & HeadB, ..._MergeTuple<RestA, RestB>]
     : [HeadA, ...RestA]
   : []
 
-type MergeArray<A extends unknown[], B extends unknown[]> = A['length'] extends 0 ? B : B['length'] extends 0 ? A : true extends GreaterThan<A['length'], B['length']> ? _MergeArray<A, B> : _MergeArray<B, A>
+type MergeTuple<A extends unknown[], B extends unknown[]> = A['length'] extends 0 ? B : B['length'] extends 0 ? A : true extends GreaterThan<A['length'], B['length']> ? _MergeTuple<A, B> : _MergeTuple<B, A>
 
-type jakd = MergeArray<[unknown, 1, 2], [0, 1, 2]>
-type feajke = MergeArray<[0, 1, 2], [unknown, 1, 2]>
-type eiejf = MergeArray<[0, unknown, 2], [unknown, unknown, 2]>
+type jakd = MergeTuple<[unknown, 1, 2], [0, 1, 2]>
+type feajke = MergeTuple<[0, 1, 2], [unknown, 1, 2]>
+type eiejf = MergeTuple<[0, unknown, 2], [unknown, unknown, 2]>
+
+
+// -- merege only tuple
+type LastOfUnion<T> =
+UnionToIntersection<T extends any ? () => T : never> extends () => (infer R)
+	? R
+	: never;
+
+export type MergeOnlyTuple<T, R extends unknown[] = []> =
+LastOfUnion<T> extends infer L ? 
+IsNever<T> extends false
+	? L extends unknown[]
+          ? MergeOnlyTuple<Exclude<T, L>, MergeTuple<R, L>>
+        :  L | MergeOnlyTuple<Exclude<T, L>, R>
+  : [] extends R ? never : R : never
+
+type jkadjkej = MergeOnlyTuple<string | 1> // (string | 1)
+type jkadjkej0 = MergeOnlyTuple<string | 1 | [0]> // (string | 1 | [[0]])
+type jkadjkej1 = MergeOnlyTuple<string | 1 | ['x', unknown] | [unknown, 1]> // (string | 1 | ['x', 1])
+
+
+
 
 /**
 Pick an array from the given array by one path.

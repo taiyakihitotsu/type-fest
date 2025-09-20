@@ -138,6 +138,6 @@ type bbbb = PickDeep<
 >
 
 type aaaa = PickDeep<
-  { obj: string | { a: string; b: number; c: boolean } | null | undefined },
+  { obj: string | { a: string; b: number; c: {d: 'result'} } | null | undefined },
   `obj.b`
 >
