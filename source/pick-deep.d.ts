@@ -123,12 +123,12 @@ type PickDeepObject<RecordType extends object, P extends string | number, ContPa
 		? ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
 				// ? Simplify<BuildObject<RecordKeyInPath, InternalPickDeep<NonNullable<RecordType>, `.${SubPath}`, RecordKeyInPath>, RecordType>>
-				? [InternalPickDeep<'string' | ObjectV, SubPath>]
+				? BuildObject<RecordKeyInPath, InternalPickDeep<ObjectV, SubPath>>
 				: 'never0'
 			: 'never1'
        : ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
-				? _NextPickDeep<ObjectV, SubPath>// [ObjectV, P, _NextPickDeep<ObjectV, SubPath>]
+				? BuildObject<RecordKeyInPath, _NextPickDeep<ObjectV, SubPath>>// [ObjectV, P, _NextPickDeep<ObjectV, SubPath>]
 				: [ObjectV, 'rea1']
 			: 'never3'
     : _PickDeepObject<RecordType, P, ContPath>
