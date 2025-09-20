@@ -2,6 +2,8 @@ import type {BuildObject, BuildTuple, NonRecursiveType, ObjectValue} from './int
 import type {IsNever} from './is-never.d.ts';
 import type {Paths} from './paths.d.ts';
 import type {Simplify} from './simplify.d.ts';
+import type {Merge} from './merge.d.ts';
+import type {GreaterThan} from './greater-than.d.ts';
 import type {Get} from './get.d.ts';
 import type {UnionToIntersection} from './union-to-intersection.d.ts';
 import type {UnknownArray} from './unknown-array.d.ts';
@@ -129,6 +131,19 @@ type PickDeepObject<RecordType extends object, P extends string | number, ContPa
 				: 'never0'
 			: 'never1'
     : _PickDeepObject<RecordType, P, ContPath>
+
+type _MergeArray<A, B> = 
+  A extends [infer HeadA, ...infer RestA]
+    ? B extends [infer HeadB, ...infer RestB]
+      ? [HeadA & HeadB, ..._MergeArray<RestA, RestB>]
+    : [HeadA, ...RestA]
+  : []
+
+type MergeArray<A extends unknown[], B extends unknown[]> = A['length'] extends 0 ? B : B['length'] extends 0 ? A : true extends GreaterThan<A['length'], B['length']> ? _MergeArray<A, B> : _MergeArray<B, A>
+
+type jakd = MergeArray<[unknown, 1, 2], [0, 1, 2]>
+type feajke = MergeArray<[0, 1, 2], [unknown, 1, 2]>
+type eiejf = MergeArray<[0, unknown, 2], [unknown, unknown, 2]>
 
 /**
 Pick an array from the given array by one path.
