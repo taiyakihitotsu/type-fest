@@ -102,7 +102,7 @@ type InternalPickDeep<T, Path extends string | number, ContPath extends string =
 	T extends NonRecursiveType
 		? T
 		: T extends UnknownArray ? PickDeepArray<T, Path>
-			: T extends object ? Simplify<PickDeepObject<T, Path, ContPath>>// [Simplify<PickDeepObject<T, Path, ContPath>>, T, Path]
+			: T extends object ? Simplify<PickDeepObject<T, Path, ContPath>>
 				: T;
 
 /**
@@ -115,24 +115,23 @@ type _PickDeepObject<RecordType extends object, P extends string | number, ContP
 				: never
 			: never;
 
-type _NextPickDeep<a, k> = (a extends any ? k extends keyof a ? {[K in k]: a[k]} : a : never)
+type _NextPickDeep<a, k> = (a extends any ? k extends keyof a ? Pick<a, k> : a : never)
  
 type PickDeepObject<RecordType extends object, P extends string | number, ContPath extends string = ''> =
     P extends `${infer RecordKeyInPath}.${infer SubPath}`
-      ? SubPath extends `${MainSubPath}.${NextSubPath}`
+      ? SubPath extends `${infer _MainSubPath}.${infer _NextSubPath}`
 		? ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
-				// ? Simplify<BuildObject<RecordKeyInPath, InternalPickDeep<NonNullable<RecordType>, `.${SubPath}`, RecordKeyInPath>, RecordType>>
-				? BuildObject<RecordKeyInPath, InternalPickDeep<ObjectV, SubPath>>
+				? BuildObject<RecordKeyInPath, InternalPickDeep<ObjectV, SubPath>, ObjectV extends object ? ObjectV : {}>
+
 				: 'never0'
 			: 'never1'
        : ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
-				? BuildObject<RecordKeyInPath, _NextPickDeep<ObjectV, SubPath>>// [ObjectV, P, _NextPickDeep<ObjectV, SubPath>]
-				: [ObjectV, 'rea1']
+				? Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep<ObjectV, SubPath>>, RecordType>>
+				: 'never2'
 			: 'never3'
-    : _PickDeepObject<RecordType, P, ContPath>
-
+    : Simplify<_PickDeepObject<RecordType, P, ContPath>>
 
 // -- merge tuple
 // This is used for an inner function of merge object shrinkly.
