@@ -126,3 +126,18 @@ expectType<{1: {0: number}}>(numberTest2);
 
 declare const numberTest3: PickDeep<Testing, '2.0'>;
 expectType<{2?: {0: number}}>(numberTest3);
+
+// expectType<PickDeep<
+//   { obj: string | { a: string; b: number; c: boolean } | null | undefined },
+//   `obj.${'b' | 'c'}`
+// >>({} as {})
+
+type bbbb = PickDeep<
+  { obj: string | { a: string; b: number; c: boolean } | null | undefined },
+  `obj`
+>
+
+type aaaa = PickDeep<
+  { obj: string | { a: string; b: number; c: boolean } | null | undefined },
+  `obj.b`
+>
