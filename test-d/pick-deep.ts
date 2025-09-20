@@ -141,3 +141,13 @@ type aaaa = PickDeep<
   { obj: string | { a: string; b: number; c: {d: 'result'} } | null | undefined },
   `obj.b`
 >
+
+type cccc = PickDeep<
+  { obj: string | { a: string; b: number; c: {d: 'result'} } | null | undefined },
+  `obj.c.d`
+>
+
+
+
+
+

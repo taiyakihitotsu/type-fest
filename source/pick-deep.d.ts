@@ -100,10 +100,10 @@ Pick an object/array from the given object/array by one path.
 */
 type InternalPickDeep<T, Path extends string | number, ContPath extends string = ''> =
 	T extends NonRecursiveType
-		? never
+		? T
 		: T extends UnknownArray ? PickDeepArray<T, Path>
-			: T extends object ? Simplify<PickDeepObject<T, Path, ContPath>>
-				: never;
+			: T extends object ? Simplify<PickDeepObject<T, Path, ContPath>>// [Simplify<PickDeepObject<T, Path, ContPath>>, T, Path]
+				: T;
 
 /**
 Pick an object from the given object by one path.
@@ -115,21 +115,22 @@ type _PickDeepObject<RecordType extends object, P extends string | number, ContP
 				: never
 			: never;
 
-type _NextPickDeep<a, k> = (a extends any ? k extends keyof a ? a[k] extends string ? 0 : {[K in k]: a[k]} : a : never)
+type _NextPickDeep<a, k> = (a extends any ? k extends keyof a ? {[K in k]: a[k]} : a : never)
  
 type PickDeepObject<RecordType extends object, P extends string | number, ContPath extends string = ''> =
     P extends `${infer RecordKeyInPath}.${infer SubPath}`
       ? SubPath extends `${MainSubPath}.${NextSubPath}`
 		? ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
-				? Simplify<BuildObject<RecordKeyInPath, InternalPickDeep<NonNullable<RecordType>, `.${SubPath}`, RecordKeyInPath>, RecordType>>
+				// ? Simplify<BuildObject<RecordKeyInPath, InternalPickDeep<NonNullable<RecordType>, `.${SubPath}`, RecordKeyInPath>, RecordType>>
+				? [InternalPickDeep<'string' | ObjectV, SubPath>]
 				: 'never0'
 			: 'never1'
        : ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
-				? [ObjectV, P, _NextPickDeep<ObjectV, SubPath>]// Simplify<BuildObject<SubPath, Get<ContPath, G>>>
-				: 'never0'
-			: 'never1'
+				? _NextPickDeep<ObjectV, SubPath>// [ObjectV, P, _NextPickDeep<ObjectV, SubPath>]
+				: [ObjectV, 'rea1']
+			: 'never3'
     : _PickDeepObject<RecordType, P, ContPath>
 
 
