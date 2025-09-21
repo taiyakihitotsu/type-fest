@@ -1,11 +1,15 @@
 import type {BuildObject, BuildTuple, NonRecursiveType, ObjectValue} from './internal/index.d.ts';
 import type {IsNever} from './is-never.d.ts';
+import type {IsTuple} from './is-tuple.d.ts';
 import type {Paths} from './paths.d.ts';
 import type {Simplify} from './simplify.d.ts';
 import type {Merge} from './merge.d.ts';
 import type {GreaterThan} from './greater-than.d.ts';
+import type {IsEqual} from './is-equal.d.ts'
+import type {SetReadonly} from './set-readonly.d.ts';
 import type {KeysOfUnion} from './keys-of-union.d.ts';
 import type {Get} from './get.d.ts';
+import type {ArrayTail} from './array-tail.d.ts'
 import type {UnionToIntersection} from './union-to-intersection.d.ts';
 import type {UnknownArray} from './unknown-array.d.ts';
 
@@ -134,23 +138,38 @@ type PickDeepObject<RecordType extends object, P extends string | number, ContPa
 			: 'never3'
     : Simplify<_PickDeepObject<RecordType, P, ContPath>>
 
+
+type ArrayFirst<A> = A extends readonly [infer Head, ...infer _R] ? Head : A extends readonly [infer Head, ...infer _R] ? Head : never
+
 // -- merge tuple
 // This is used for an inner function of merge object shrinkly.
-type _MergeTuple<A, B> = 
-  A extends [infer HeadA, ...infer RestA]
-    ? B extends [infer HeadB, ...infer RestB]
-      ? [HeadA, HeadB] extends infer M extends [unknown[], unknown[]]
+type _MergeTuple<
+A extends UnknownArray
+, B extends UnknownArray> = 
+  A extends readonly [infer HeadA, ...infer RestA]
+    ? B extends readonly [infer HeadB, ...infer RestB]
+      ? [HeadA, HeadB] extends infer M extends readonly [UnknownArray, UnknownArray]
         ? [MergeTuple<M[0], M[1]>, ..._MergeTuple<RestA, RestB>]
       : [HeadA & HeadB, ..._MergeTuple<RestA, RestB>]
     : [HeadA, ...RestA]
   : []
 
-type MergeTuple<A extends unknown[], B extends unknown[]> = A['length'] extends 0 ? B : B['length'] extends 0 ? A : true extends GreaterThan<A['length'], B['length']> ? _MergeTuple<A, B> : _MergeTuple<B, A>
-
+type MergeTuple<
+  A extends UnknownArray
+  , B extends UnknownArray> = 
+  A['length'] extends 0
+    ? B
+  : B['length'] extends 0
+    ? A
+  : true extends GreaterThan<A['length'], B['length']>
+      ? _MergeTuple<A, B>
+    : _MergeTuple<B, A>
+    
 type jakd = MergeTuple<[unknown, 1, 2], [0, 1, 2]> // [0,1,2]
 type feajke = MergeTuple<[0, 1, 2], [unknown, 1, 2]> // [0,1,2]
 type eiejf = MergeTuple<[0, unknown, 2], [unknown, unknown, 2]> // [0,unknown,2]
-type eiejff = MergeTuple<[0, unknown, 2, [0, unknown]], [unknown, unknown, 2, [unknown, 1]]> // [0, unknown, 2, [0, 1]]
+type eijff = MergeTuple<[0, unknown, 2, [0, unknown]], [unknown, unknown, 2, [unknown, 1]]> // [0, unknown, 2, [0, 1]]
+type deeiejf = MergeTuple<readonly [0, unknown, 2], [unknown, unknown, 2]> // readonly [0,unknown,2]
 
 type _MergeNarrowObject<A extends object, B extends object, KU extends (keyof A | keyof B), R extends object = {}> =
   LastOfUnion<KU> extends infer K
@@ -163,9 +182,15 @@ type _MergeNarrowObject<A extends object, B extends object, KU extends (keyof A 
     : R
   : never
 
-type MergeNarrowObject<A extends object, B extends object> = _MergeNarrowObject<A, B, (KeysOfUnion<A> | KeysOfUnion<B>) extends infer K extends (keyof A | keyof B) ? K : never>
+type MergeNarrowObject<
+  A extends object
+, B extends object> = 
+  // [todo]
+  IsEqual<A, {}> extends true ? B : IsEqual<B, {}> extends true ? A : _MergeNarrowObject<A, B, (KeysOfUnion<A> | KeysOfUnion<B>) extends infer K extends (keyof A | keyof B) ? K : never>
 
 type kjakd = MergeNarrowObject<{readonly a: 1, c: 'a'}, {b?: 2, c: 'a'}>
+type testmergeempty = MergeNarrowObject<{readonly a: 1, c: 'a'}, {}>
+type testmergeempty0 = MergeNarrowObject<{}, {readonly a: 1, c: 'a'}>
 type kjakd0 = MergeNarrowObject<{readonly a: 1, c: 'b'}, {b?: 2, c: 'a'}>
 
 // -- merege only tuple
@@ -174,29 +199,51 @@ UnionToIntersection<T extends any ? () => T : never> extends () => (infer R)
 	? R
 	: never;
 
-export type MergeOnlyTuple<T, R extends unknown[] = [], M extends object = {}> =
-LastOfUnion<T> extends infer L ? 
-IsNever<T> extends false
-	? L extends unknown[] // todo this type
+// [todo] rename
+export type MergeOnlyTuple<
+  T
+, R extends UnknownArray = []
+, M extends object = {}> =
+  LastOfUnion<T> extends infer L
+    ? IsNever<T> extends false
+	? L extends UnknownArray
+// [todo] rename
           ? MergeOnlyTuple<Exclude<T, L>, MergeTuple<R, L>, M>
-//        : L extends object
-        :  L | MergeOnlyTuple<Exclude<T, L>, R, M>
-  : [] extends R ? never : R : never
+        : L extends object
+// [todo] rename
+          ? MergeOnlyTuple<Exclude<T, L>, R, MergeNarrowObject<M, L>>
+        : L | MergeOnlyTuple<Exclude<T, L>, R, M>
+  : [] extends R ? never : R | M : never
 
 type jkadjkej = MergeOnlyTuple<string | 1> // (string | 1)
 type jkadjkej0 = MergeOnlyTuple<string | 1 | [0]> // (string | 1 | [[0]])
 type jkadjkej1 = MergeOnlyTuple<string | 1 | ['x', unknown] | [unknown, 1]> // (string | 1 | ['x', 1])
+// [todo] keep readonly
+type jkadjkej2 = MergeOnlyTuple<string | 1 | readonly ['x', unknown] | [unknown, 1]> // (string | 1 | ['x', 1])
+type jkadjkej3 = MergeOnlyTuple<string | 1 | readonly ['x', unknown] | [unknown, 1] | {a: 'some'} | {readonly b: 'thing', c?: '?'}> // (string | 1 | ['x', 1] | {a: 'some', b: 'thing'})
+type jkadjkej4 = MergeOnlyTuple<string | 1 | readonly ['x', unknown] | [unknown, 1] | {a: 'some'} | {readonly b: 'thing', c?: '?'}> // (string | 1 | ['x', 1] | {a: 'some', readonly b: 'thing', c?: '?'})
 
 
 type MergeNarrow<A, B> =
-  [A, B] extends infer M extends [unknown[], unknown[]]
+  [A, B] extends infer M extends [UnknownArray, UnknownArray]
     ? MergeOnlyTuple<M[0], M[1]>
   : [A, B] extends infer M extends [object, object]
     ? MergeNarrowObject<M[0], M[1]>
   : (A & B)
 
-type adjk = MergeNarrow<{a: 1}, {b?: 2}>
+type MergeNarrowUnion<A, R = never> = 
+  LastOfUnion<A> extends infer L
+    ? 
+  : never
 
+type _notobjnortuple = MergeNarrow<string, string>
+type _object = MergeNarrow<{a: 1, c: number}, {b: 2, c: number}>
+type _keepoptional_object = MergeNarrow<{a: 1, c: number}, {b?: 2, c: number}>
+type _keepreadonly_object = MergeNarrow<{a: 1, c: number}, {readonly b: 2, c: number}>
+type _keepreadonlyoptional_object = MergeNarrow<{a: 1, c: number}, {readonly b?: 2, c: number}>
+type _tuple = MergeNarrow<[0, unknown, 2], [0, 1, unknown]>
+type _keepreadonly_tuple = MergeNarrow<readonly [0, unknown, 2], [0, 1, unknown]>
+type _keepreadonly_deeptuple = MergeNarrow<readonly [0, unknown, 2, [4, unknown, 6]], [0, 1, unknown, [unknown, 5, 6]]> // [0,1,2,[4,5,6]]
 
 /**
 Pick an array from the given array by one path.
