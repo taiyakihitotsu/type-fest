@@ -89,16 +89,11 @@ export type PickDeep<T, PathUnion extends Paths<T>> =
 	T extends NonRecursiveType
 		? never
 		: T extends UnknownArray
-                  ? {[P in PathUnion]: InternalPickDeep<T, P>}[PathUnion]
-			// ? UnionToIntersection<{
-			// 	[P in PathUnion]: InternalPickDeep<T, P>;
-			// }[PathUnion]
-			// >
+                    ? MergeNarrow<{[P in PathUnion]: InternalPickDeep<T, P>}[PathUnion]>
+//                  ? {[P in PathUnion]: InternalPickDeep<T, P>}[PathUnion]
 			: T extends object
-                            ? Simplify<PickDeepObject<T, PathUnion>>
-				// ? Simplify<UnionToIntersection<{
-				// 	[P in PathUnion]: InternalPickDeep<T, P>;
-				// }[PathUnion]>>
+                              ? MergeNarrow<Simplify<PickDeepObject<T, PathUnion>>>
+//                            ? Simplify<PickDeepObject<T, PathUnion>>
 				: never;
 
 /**
