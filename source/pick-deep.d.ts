@@ -3,6 +3,7 @@ import type {IsNever} from './is-never.d.ts';
 import type {IsTuple} from './is-tuple.d.ts';
 import type {Paths} from './paths.d.ts';
 import type {Simplify} from './simplify.d.ts';
+import type {ArraySplice} from './array-splice.d.ts'
 import type {Merge} from './merge.d.ts';
 import type {GreaterThan} from './greater-than.d.ts';
 import type {IsEqual} from './is-equal.d.ts'
@@ -117,23 +118,50 @@ type _PickDeepObject<RecordType extends object, P extends string | number, ContP
 			: never;
 
 type _NextPickDeep<a, k> = (a extends any ? k extends keyof a ? Pick<a, k> : a : never)
- 
+
+
+
+type jkafdj = PickDeepObject<{a: [0, 1, 2]}, 'a.0'>
+
+// [todo] readonly imp
+type _AssocTuple<
+  Tuple extends UnknownArray
+, K extends (string | number)
+, V
+, R extends UnknownArray = []> = 
+  Tuple extends readonly [infer Head, ...infer Rest extends UnknownArray]
+    ? IsEqual<`${R['length']}`, `${K}`> extends true
+      ? [...R, V,...Rest] 
+    : _AssocTuple<Rest, K, V, [...R, Head]>
+  : never
+
+type AssocTuple<Tuple extends UnknownArray, K extends (string | number), V> = _AssocTuple<Tuple, K, V>
+  
+
+type adjkd = AssocTuple<[0,1,2,3], '3', true> //[0,1,2,true]
+type adjkd00 = AssocTuple<[0,1,2,3], '4', true> //never
+
+
 type PickDeepObject<RecordType extends object, P extends string | number, ContPath extends string = ''> =
     P extends `${infer RecordKeyInPath}.${infer SubPath}`
       ? SubPath extends `${infer _MainSubPath}.${infer _NextSubPath}`
 		? ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
 				? BuildObject<RecordKeyInPath, InternalPickDeep<ObjectV, SubPath>, ObjectV extends object ? ObjectV : {}>
-
+// [todo]
 				: 'never0'
+// [todo]
 			: 'never1'
        : ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
 				? Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep<ObjectV, SubPath>>, RecordType>>
+// [todo]
 				: 'never2'
+// [todo]
 			: 'never3'
     : Simplify<_PickDeepObject<RecordType, P, ContPath>>
 
+// [todo] FirstArrayElement? in internal
 type ArrayFirst<A> = A extends readonly [infer Head, ...infer _R] ? Head : A extends readonly [infer Head, ...infer _R] ? Head : never
 
 // -- merge tuple
