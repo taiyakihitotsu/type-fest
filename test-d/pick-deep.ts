@@ -1,5 +1,5 @@
 import {expectType} from 'tsd';
-import type {PickDeep} from '../index.d.ts';
+import type {IsEqual, PickDeep} from '../index.d.ts';
 
 declare class ClassA {
 	a: string;
@@ -132,32 +132,29 @@ expectType<{2?: {0: number}}>(numberTest3);
 //   `obj.${'b' | 'c'}`
 // >>({} as {})
 
-type bbbb = PickDeep<
-  { obj: string | { a: string; b: number; c: boolean } | null | undefined },
-  `obj`
->
+// Test for https://github.com/sindresorhus/type-fest/issues/1224
+type unionElement0_Actual = PickDeep<{ obj: string | { a: string; b: number; c: boolean } | null | undefined }, `obj`>
+type unionElement0_Expected = unionElement0_Actual
+declare const unionElement0: IsEqual<unionElement0_Actual, unionElement0_Expected>;
+expectType<true>(unionElement0);
 
-type aaaa = PickDeep<
-  { obj: string | { a: string; b: number; c: {d: 'result'} } | null | undefined },
-  `obj.b`
->
+// Test for https://github.com/sindresorhus/type-fest/issues/1224
+type unionElement1_Actual = PickDeep<{ obj: string | { a: string; b: number; c: {d: 'result'} } | null | undefined }, `obj.b`>
+type unionElement1_Expected = {obj: string | null | undefined | {b: number}}
+declare const unionElement1: IsEqual<unionElement1_Actual, unionElement1_Expected>;
+expectType<true>(unionElement1);
 
-type cccc = PickDeep<
-  { obj: string | { a: string; b: number; c: {d: 'result'} } | null | undefined },
-  `obj.c.d`
->
+// [note]
+// tsd error: 
+// this passes unintentionally.
+// declare const unionElement2: PickDeep<{ obj: string | { a: string; b: number; c: {readonly d?: 'result'} } | null | undefined }, `obj.c.d`>;
+type unionElement2_Actual = PickDeep<{ obj: string | { a: string; b: number; c: {readonly d?: 'result'} } | null | undefined }, `obj.c.d`>
+type unionElement2_Expected = {obj: string | null | undefined | {c: {readonly d?: 'result'}}}
+declare const unionElement2: IsEqual<unionElement2_Actual, unionElement2_Expected>;
+expectType<true>(unionElement2);
 
-type dddd = PickDeep<
-  { obj: string | { a: string; b: number; c: {d?: 'result'} } | null | undefined },
-  `obj.c.d`
->
-
-type eeee = PickDeep<
-  { obj: string | { a: string; b: number; c?: {d?: 'result'} } | null | undefined },
-  `obj.c.d`
->
-
-
-
-
-
+type unionElement3_Actual = PickDeep<
+  { obj: string | { a: string; b: number; c?: {readonly d?: 'result' | 'is'} } | null | undefined }, `obj.c.d`> 
+type unionElement3_Expected = {obj: string | null | undefined | {c?: {readonly d?: 'result' | 'is'}}}
+declare const unionElement3: IsEqual<unionElement3_Actual, unionElement3_Expected>;
+expectType<true>(unionElement3)

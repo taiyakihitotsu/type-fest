@@ -117,14 +117,13 @@ type _PickDeepObject<RecordType extends object, P extends string | number, ContP
 				: never
 			: never;
 
-type _NextPickDeep<a, k> = (a extends any ? k extends keyof a ? Pick<a, k> : a : never)
-
-
+type _NextPickDeep<a, k> = (a extends any ? k extends keyof a ? Pick<a, k>[k] : a : never)
+type _NextPickDeep1<a, k> = (a extends any ? k extends keyof a ? Pick<a, k> : a : never)
 
 type jkafdj = PickDeepObject<{a: [0, 1, 2]}, 'a.0'>
 
 // [todo] readonly imp
-type _AssocTuple<
+type _TupleUpsertAt<
   Tuple extends UnknownArray
 , K extends (string | number)
 , V
@@ -132,34 +131,45 @@ type _AssocTuple<
   Tuple extends readonly [infer Head, ...infer Rest extends UnknownArray]
     ? IsEqual<`${R['length']}`, `${K}`> extends true
       ? [...R, V,...Rest] 
-    : _AssocTuple<Rest, K, V, [...R, Head]>
+    : _TupleUpsertAt<Rest, K, V, [...R, Head]>
   : never
 
-type AssocTuple<Tuple extends UnknownArray, K extends (string | number), V> = _AssocTuple<Tuple, K, V>
+type TupleUpsertAt<Tuple extends UnknownArray, K extends (string | number), V> = _TupleUpsertAt<Tuple, K, V>
   
 
-type adjkd = AssocTuple<[0,1,2,3], '3', true> //[0,1,2,true]
-type adjkd00 = AssocTuple<[0,1,2,3], '4', true> //never
+type adjkd = TupleUpsertAt<[0,1,2,3], '3', true> //[0,1,2,true]
+type adjkd00 = TupleUpsertAt<[0,1,2,3], '4', true> //never
 
+type adfjkae = ObjectValue<{a: [0,1,2]}, 'a'>
+
+// This is set for `BuildObject` order of arguments.
+// type UpsertAt<
+//   K extends (string | number)
+// , V
+// , Model extends (UnknownArray | object)> =
+//   Model extends UnknownArray
+//     ? TupleUpsertAt<Model, K, V>
+//   : BuildObject<K, V, Model>
 
 type PickDeepObject<RecordType extends object, P extends string | number, ContPath extends string = ''> =
     P extends `${infer RecordKeyInPath}.${infer SubPath}`
       ? SubPath extends `${infer _MainSubPath}.${infer _NextSubPath}`
 		? ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
-				? BuildObject<RecordKeyInPath, InternalPickDeep<ObjectV, SubPath>, ObjectV extends object ? ObjectV : {}>
-// [todo]
-				: 'never0'
-// [todo]
-			: 'never1'
+				? BuildObject<RecordKeyInPath, InternalPickDeep<ObjectV, SubPath>, ObjectV extends (UnknownArray | object) ? ObjectV : {}> // [todo] fix this
+				: never
+			: never
        : ObjectValue<RecordType, RecordKeyInPath> extends infer ObjectV
 			? IsNever<ObjectV> extends false
-				? Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep<ObjectV, SubPath>>, RecordType>>
-// [todo]
-				: 'never2'
-// [todo]
-			: 'never3'
+//				? Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep<ObjectV, SubPath>>, RecordType>>
+                                ? ObjectV extends UnknownArray
+                                  ? Simplify<BuildObject<RecordKeyInPath, PickDeepArray<ObjectV, SubPath>, RecordType>>
+// [note] ObjectV is never even though `IsNever<Object>` returns `false`.
+				: Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep1<Simplify<_NextPickDeep<RecordType, RecordKeyInPath>>, SubPath>>, RecordType>> //Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep<ObjectV, SubPath>>, RecordType>>
+				: '0never'
+			: '1never'
     : Simplify<_PickDeepObject<RecordType, P, ContPath>>
+//   : never
 
 // [todo] FirstArrayElement? in internal
 type ArrayFirst<A> = A extends readonly [infer Head, ...infer _R] ? Head : A extends readonly [infer Head, ...infer _R] ? Head : never
@@ -306,3 +316,5 @@ type PickDeepArray<ArrayType extends UnknownArray, P extends string | number> =
 						? readonly [...BuildTuple<ArrayIndex>, ArrayType[ArrayIndex]]
 						: never
 			: never;
+
+
