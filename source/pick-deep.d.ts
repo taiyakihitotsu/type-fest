@@ -139,7 +139,6 @@ type PickDeepObject<RecordType extends object, P extends string | number, ContPa
 			: 'never3'
     : Simplify<_PickDeepObject<RecordType, P, ContPath>>
 
-
 type ArrayFirst<A> = A extends readonly [infer Head, ...infer _R] ? Head : A extends readonly [infer Head, ...infer _R] ? Head : never
 
 // -- merge tuple
@@ -149,8 +148,11 @@ A extends UnknownArray
 , B extends UnknownArray> = 
   A extends readonly [infer HeadA, ...infer RestA]
     ? B extends readonly [infer HeadB, ...infer RestB]
-      ? [HeadA, HeadB] extends infer M extends readonly [UnknownArray, UnknownArray]
+      ? [HeadA, HeadB] extends infer M extends [UnknownArray, UnknownArray]
         ? [MergeTuple<M[0], M[1]>, ..._MergeTuple<RestA, RestB>]
+      : [HeadA, HeadB] extends infer M extends [object, object]
+        ? [MergeNarrowObject<M[0], M[1]>, ..._MergeTuple<RestA, RestB>]
+      // [note] don't use MergeNarrow directly, because it takes union type and its return A | B simply if not tuple nor object, so it transfers `0 | unknown` to `unknown` if its union is of element.
       : [HeadA & HeadB, ..._MergeTuple<RestA, RestB>]
     : [HeadA, ...RestA]
   : []
@@ -168,6 +170,7 @@ type MergeTuple<
     
 type jakd = MergeTuple<[unknown, 1, 2], [0, 1, 2]> // [0,1,2]
 type feajke = MergeTuple<[0, 1, 2], [unknown, 1, 2]> // [0,1,2]
+type feajke2 = MergeNarrow<[0, 1, 2] | [unknown, 1, 2]> // [0,1,2]
 type feajkdd = MergeTuple<[0, 1, 2], []> // [0,1,2]
 type feajkddef = MergeTuple<never, [0,1,2]> // [0,1,2]
 type eiejf = MergeTuple<[0, unknown, 2], [unknown, unknown, 2]> // [0,unknown,2]
@@ -213,7 +216,6 @@ UnionToIntersection<T extends any ? () => T : never> extends () => (infer R)
 	? R
 	: never;
 
-// [todo] rename
 export type MergeNarrow<
   T
 , R extends UnknownArray = never
@@ -229,13 +231,12 @@ export type MergeNarrow<
       : L | MergeNarrow<Exclude<T, L>, R, M>
     : IsEqual<[R, M], [[], {}]> extends true
        ? never
-    : R | M
+    :  R | M
   : never
 
-type jkad = LastOfUnion<0>
-
+type fff_feajke = MergeNarrow<[0, 1, 2] | [unknown, 1, 2]> // [0,1,2]
 type jkadjkej = MergeNarrow<string | 1> // (string | 1)
-type jkadjkej0 = MergeNarrow<string | 1 | [0]> // (string | 1 | [[0]])
+type jkadjkej0 = MergeNarrow<string | 1 | [0]> // (string | 1 | [0])
 type jkadjkej1 = MergeNarrow<string | 1 | ['x', unknown] | [unknown, 1]> // (string | 1 | ['x', 1])
 // [todo] keep readonly
 type jkadjkej2 = MergeNarrow<string | 1 | readonly ['x', unknown] | [unknown, 1]> // (string | 1 | ['x', 1])
