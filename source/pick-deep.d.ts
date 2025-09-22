@@ -1,4 +1,5 @@
 import type {BuildObject, BuildTuple, NonRecursiveType, ObjectValue} from './internal/index.d.ts';
+import type {Get} from './get.d.ts'
 import type {IsNever} from './is-never.d.ts';
 import type {Paths} from './paths.d.ts';
 import type {Simplify} from './simplify.d.ts';
@@ -111,10 +112,21 @@ type _PickDeepObject<RecordType extends object, P extends (string | number)> =
 				: never
 			: never;
 
+// [todo] internal
+type _Pick<T, Key extends string | number> = 
+  {[k in keyof T as `${k extends (string | number) ? k : never}` extends `${Key}` ? k : never]: T[k]}
+// [todo] internal
+type IsKeyOf<a, k extends string | number> = `${k}` extends `${keyof a extends (string | number) ? keyof a : never}` ? true : false
+type _NextPickDeep<a, k extends (number | string)> = (a extends any ? IsEqual<true, IsKeyOf<a, k>> extends true ? Get<a, `${k}`> : a : never);
+// type _NextPickDeep1<a, k extends (number | string)> = (a extends any ? `${k}` extends `${keyof a extends (string | number) ? keyof a : never}` ? _Pick<a, k> : a : never);
+type _NextPickDeep1<a, k extends (number | string)> = (a extends any ? IsEqual<true, IsKeyOf<a, k>> extends true ? _Pick<a, k> : a : never);
+
+/*
 // [todo] reanem
 type _NextPickDeep<a, k> = (a extends any ? k extends keyof a ? Pick<a, k>[k] : a : never);
 // [todo] rename
 type _NextPickDeep1<a, k> = (a extends any ? k extends keyof a ? Pick<a, k> : a : never);
+*/
 
 // [todo] readonly imp
 //
@@ -158,7 +170,7 @@ type PickDeepObject<RecordType extends object, P extends (string | number)> =
 					? ObjectV extends UnknownArray
 						? Simplify<BuildObject<RecordKeyInPath, PickDeepArray<ObjectV, SubPath>, RecordType>>
 // [note] ObjectV is never even though `IsNever<Object>` returns `false`.
-						: [ObjectV] // BuildObject<RecordKeyInPath, Simplify<_NextPickDeep1<Simplify<_NextPickDeep<RecordType, RecordKeyInPath>>, SubPath>> extends infer S ? S : never
+						: Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep1<Simplify<_NextPickDeep<RecordType, RecordKeyInPath>>, SubPath>>, RecordType>>
 //						: Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep1<Simplify<_NextPickDeep<RecordType, RecordKeyInPath>>, SubPath>>, RecordType>>
 //						: Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep1<Simplify<_NextPickDeep<RecordType, RecordKeyInPath>>, SubPath>>, RecordType>>
 //						: Simplify<BuildObject<RecordKeyInPath, Simplify<_NextPickDeep1<Simplify<_NextPickDeep<RecordType, RecordKeyInPath>>, SubPath>>, RecordType>>

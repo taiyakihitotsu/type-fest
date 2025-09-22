@@ -23,6 +23,19 @@ type BaseType = {
 	0: number;
 };
 
+/*
+type Testing = {
+	// object: BaseType;
+	// optionalObject?: Partial<BaseType>;
+	// optionalString?: string;
+	// readonly readonlyObject: {a: 1};
+	1: BaseType;
+	2?: BaseType;
+	// added.
+        3?: boolean | {'3x': string, '3y': number};
+};
+*/
+
 type Testing = BaseType & {
 	object: BaseType;
 	optionalObject?: Partial<BaseType>;
@@ -31,7 +44,7 @@ type Testing = BaseType & {
 	1: BaseType;
 	2?: BaseType;
 	// added.
-        3?: boolean | {'3x': string, '3y': number};
+//        3?: boolean | {'3x': string, '3y': number};
 };
 
 declare const normal: PickDeep<Testing, 'string'>;
@@ -158,9 +171,10 @@ type numberTest3_Actual = PickDeep<Testing, '2.0'>;
 type numberTest3_Expect = { 2?: { 0: number } };
 expectType<true>({} as IsEqual<numberTest3_Actual, numberTest3_Expect>);
 
-// type numberTest3_Actual = PickDeep<Testing, '2.0'>;
+// type numberTest3_Actual = PickDeep<Testing, '3.0'>;
 // type numberTest3_Expect = { 2?: { 0: number } };
 // expectType<true>({} as IsEqual<numberTest3_Actual, numberTest3_Expect>);
+
 
 
 
@@ -213,6 +227,11 @@ expectType<true>({} as IsEqual<numberTest3_Actual, numberTest3_Expect>);
 //   { obj: string | { a: string; b: number; c: boolean } | null | undefined },
 //   `obj.${'b' | 'c'}`
 // >>({} as {})
+
+
+
+
+
 
 // Test for https://github.com/sindresorhus/type-fest/issues/1224
 type unionElement0_Actual = PickDeep<{ obj: string | { a: string; b: number; c: boolean } | null | undefined }, `obj`>;
