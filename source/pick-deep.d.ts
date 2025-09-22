@@ -177,13 +177,25 @@ type deeiejf = MergeTuple<readonly [0, unknown, 2], [unknown, unknown, 2]> // re
 type _MergeNarrowObject<A extends object, B extends object, KU extends (keyof A | keyof B), R extends object = {}> =
   LastOfUnion<KU> extends infer K
     ? K extends (keyof A) & (keyof B)
-      ? _MergeNarrowObject<A, B, Exclude<KU, K>, Simplify<BuildObject<K, A[K] & B[K], A & B>>>
+      // ? _MergeNarrowObject<A, B, Exclude<KU, K>, Simplify<BuildObject<K, A[K] & B[K], A & B>>>
+      ? _MergeNarrowObject<A, B, Exclude<KU, K>, Simplify<R & BuildObject<K, MergeNarrow<A[K] | B[K]>, A & B>>>
+
     : K extends keyof A
-      ? _MergeNarrowObject<A, B, Exclude<KU, K>, Simplify<B & BuildObject<K, A[K], A>>>
+      ? _MergeNarrowObject<A, B, Exclude<KU, K>, Simplify<R & BuildObject<K, A[K], A>>>
     : K extends keyof B
-      ? _MergeNarrowObject<A, B, Exclude<KU, K>, Simplify<A & BuildObject<K, B[K], B>>>
+      ? _MergeNarrowObject<A, B, Exclude<KU, K>, Simplify<R & BuildObject<K, B[K], B>>>
     : R
   : never
+
+// delete because of dup
+// type kjakd = MergeNarrowObject<{readonly a: 1, c: 'a'}, {b?: 2, c: 'a'}>
+type testmergenever = MergeNarrowObject<{readonly a: 1, c: 'a'}, never> // {readonly a: 1, c: 'a'}
+type testmergeempty0 = MergeNarrowObject<{}, {readonly a: 1, c: 'a'}> // {readonly a: 1, c: 'a'}
+
+type kjakd0 = MergeNarrowObject<{readonly a: 1, c: 'b'}, {b?: 2, c: 'a'}> // {readonly a: 1, b?: 2, c: never}
+type jkjakd0 = MergeNarrowObject<{readonly a: 1, c: [0, unknown]}, {b?: 2, c: [unknown, 1]}> // {readonly a: 1, b?: 2, c: [0, 1]}
+// delete because of dup
+// type uidfa = _MergeNarrowObject<{readonly a: 1, c: [0, unknown]}, {b?: 2, c: [unknown, 1]}, Exclude<'a' | 'b' | 'c', 'c'>, Simplify<BuildObject<'c', MergeNarrow<{readonly a: 1, c: [0, unknown]}['c'] | {b?: 2, c: [unknown, 1]}['c']>, {readonly a: 1, c: [0, unknown]} & {b?: 2, c: [unknown, 1]}>>>
 
 type MergeNarrowObject<
   A extends object
@@ -194,12 +206,6 @@ type MergeNarrowObject<
   : Or<IsEqual<B, never>, IsEqual<B, {}>> extends true
     ? A
   : _MergeNarrowObject<A, B, (KeysOfUnion<A> | KeysOfUnion<B>) extends infer K extends (keyof A | keyof B) ? K : never>
-
-type kjakd = MergeNarrowObject<{readonly a: 1, c: 'a'}, {b?: 2, c: 'a'}>
-type testmergeempty = MergeNarrowObject<{readonly a: 1, c: 'a'}, {}>
-type testmergenever = MergeNarrowObject<{readonly a: 1, c: 'a'}, never>
-type testmergeempty0 = MergeNarrowObject<{}, {readonly a: 1, c: 'a'}>
-type kjakd0 = MergeNarrowObject<{readonly a: 1, c: 'b'}, {b?: 2, c: 'a'}>
 
 // -- merege only tuple
 type LastOfUnion<T> =
