@@ -1,5 +1,5 @@
 import {expectType} from 'tsd';
-import type {IsEqual, PickDeep} from '../index.d.ts';
+import type {IsEqual, PickDeep, Simplify} from '../index.d.ts';
 
 declare class ClassA {
 	a: string;
@@ -60,8 +60,10 @@ interface DeepInterface extends DeepType {
 		string: string;
 	};
 }
+
 type deepInterface_Actual = PickDeep<DeepInterface, 'nested.deep.deeper.value'>;
 expectType<true>({} as IsEqual<deepInterface_Actual, DepthType>);
+
 type deepInterface2_Actual = PickDeep<DeepInterface, 'bar.number'>;
 type deepInterface2_Expected = {bar: {number: number}};
 expectType<true>({} as IsEqual<deepInterface2_Actual, deepInterface2_Expected>);
@@ -194,6 +196,7 @@ type unionKeyObjectArray_Actual = PickDeep<{arr: Array<{a: string; b: number; c:
 type unionKeyObjectArray_Expected = {arr: Array<{b: number; c: boolean}>};
 expectType<true>({} as IsEqual<unionKeyObjectArray_Actual, unionKeyObjectArray_Expected>);
 
+// [todo] support array.
 type unionKeyObjectArrayArray_Actual = PickDeep<{arr: Array<Array<{a: string; b: number; c: boolean}>>}, `arr.${number}.${number}.${'b' | 'c'}`>;
 type unionKeyObjectArrayArray_Expected = {arr: Array<Array<{b: number; c: boolean}>>};
 expectType<true>({} as IsEqual<unionKeyObjectArrayArray_Actual, unionKeyObjectArrayArray_Expected>);
