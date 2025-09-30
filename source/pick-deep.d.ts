@@ -180,6 +180,45 @@ type PPPP<P, PathTree extends PathTreeType> =
       ? [_PickDeep<P, PathTree, keyof PathTree>][0]
       : P;
 
+
+
+type RecursionPickDeep<Parent, NextParent, NextPathTree> = 
+  NextParent extends infer AAA extends UnknownArray
+    /* NextParent: array */
+    ? IsEqual<IsTuple<AAA>, false> extends true
+    /* Via tuple to prevent distribution. */
+      ? [AAA extends Array<infer _>
+        /* if end */
+        ? _Get<NextPathTree, CoerceKeyof<NextPathTree>> extends LeafMark
+          ? IsEqual<`${number}`, `${CoerceKeyof<NextPathTree>}`> extends true
+            /* `leadingSpreadArray2_Actual` in `test-d/pick-deep.ts` */
+            ? [NextParent, Array<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>][0]
+            /* `tailingSpreadArray1_Actual` in `test-d/pick-deep.ts` */
+            : [...TupleOf<StringToNumber<`${CoerceKeyof<NextPathTree>}`>>, PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>]
+       /* not end */
+       : PPPP<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>, _Get<NextPathTree, CoerceKeyof<NextPathTree>> extends infer G extends PathTreeType ? G: never> extends infer Result
+         ? IsEqual<`${number}`, `${CoerceKeyof<NextPathTree>}`> extends true
+           /* `leadingSpreadArray1_Actual` in `test-d/pick-deep.ts` */
+           ? [Array<Result>][0]
+           /* `tailingSpreadArray2_Actual` in `test-d/pick-deep.ts`. */
+           : [[...TupleOf<StringToNumber<`${CoerceKeyof<NextPathTree>}`>>, Result]][0]
+        : never
+     : never][0]
+     // [todo] refac
+   /* NextParent: tuple */
+   : [ // PickOrSelf<
+       //    NextParent
+       // 	, CoerceKeyof<NextPathTree>>
+       // 	,
+       PPPP< NextParent
+  	      , NextPathTree extends PathTreeType ? NextPathTree : never >
+      ][0]
+  /* NextParent: object */
+  : [PPPP<Simplify<PickOrSelf<NextParent, CoerceKeyof<Simplify<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>>>>, NextPathTree extends PathTreeType ? NextPathTree : never>][0]
+
+
+
+
 type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> =
   LastOfUnion<K> extends infer L extends keyof PathTree
     ? IsNever<L> extends false
@@ -187,15 +226,15 @@ type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> 
         ? IsEqual<true, CollKeyOf<Parent, L>> extends true
           /* Detect an end of path. */
           ? IsEqual<LeafMark, PathTree[L]> extends true
-              ? Parent extends UnknownArray
-                /* `${number}` case. */
-                ? IsEqual<IsTuple<Parent>, false> extends true
-                  ? 'never' // [todo] 何してるかわからん
-                  : PickOrSelf<Parent, L> // [todo] 同じく
-                /*  */
-                : MergeOnlyObjectUnion<
-                    Simplify<PickOrSelf<Parent, L>> | _PickDeep<Parent, PathTree, Exclude<K, L>>
-                  >
+              ? // Parent extends UnknownArray
+                // /* `${number}` case. */
+                // ? never
+                // // ? IsEqual<IsTuple<Parent>, false> extends true
+                // //   ? 'never' 
+                // //   : PickOrSelf<Parent, L> 
+                // /*  */
+                // : 
+                MergeOnlyObjectUnion<Simplify<PickOrSelf<Parent, L>> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
               : _Get<PathTree, L> extends infer NextPathTree
                 ? _Get<Parent, L> extends infer NextParent
                 ? MergeOnlyObjectUnion<
