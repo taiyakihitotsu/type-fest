@@ -196,7 +196,6 @@ type unionKeyObjectArray_Actual = PickDeep<{arr: Array<{a: string; b: number; c:
 type unionKeyObjectArray_Expected = {arr: Array<{b: number; c: boolean}>};
 expectType<true>({} as IsEqual<unionKeyObjectArray_Actual, unionKeyObjectArray_Expected>);
 
-// [todo] support array.
 type unionKeyObjectArrayArray_Actual = PickDeep<{arr: Array<Array<{a: string; b: number; c: boolean}>>}, `arr.${number}.${number}.${'b' | 'c'}`>;
 type unionKeyObjectArrayArray_Expected = {arr: Array<Array<{b: number; c: boolean}>>};
 expectType<true>({} as IsEqual<unionKeyObjectArrayArray_Actual, unionKeyObjectArrayArray_Expected>);
