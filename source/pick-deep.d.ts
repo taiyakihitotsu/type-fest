@@ -1,61 +1,57 @@
-import type {Get} from './get.d.ts';
 import type {TupleOf} from './tuple-of.d.ts';
-import type {BuildObject, NonRecursiveType, ObjectValue} from './internal/index.d.ts';
+import type {BuildObject} from './internal/index.d.ts';
 import type {Paths} from './paths.d.ts';
 import type {Simplify} from './simplify.d.ts';
 import type {GreaterThan} from './greater-than.d.ts';
 import type {IsEqual} from './is-equal.d.ts';
 import type {Or} from './or.d.ts';
-import type {UnionToTuple} from './union-to-tuple.d.ts'
-import type {NonNegative, IsNegative} from './numeric.d.ts'
-import type {IsTuple} from './is-tuple.d.ts'
+import type {IsNegative} from './numeric.d.ts';
+import type {IsTuple} from './is-tuple.d.ts';
 import type {KeysOfUnion} from './keys-of-union.d.ts';
 import type {UnionToIntersection} from './union-to-intersection.d.ts';
 import type {UnknownArray} from './unknown-array.d.ts';
 
+/*
 
 type Test_Pick_0 = _Pick<[0,1], 1>; // 1
 type Test_Pick_1 = _Pick<{a: 'aa'}, 'a'>; // {a: 'aa'}
-type _Pick<T, Key extends (string | number)> =
-  T extends UnknownArray
-    ? T[Key extends keyof T ? Key : never]
-  : 
-  {[k in keyof T as `${k extends (string | number) ? k : never}` extends `${Key}` ? k : never]: T[k]};
+*/
+type _Pick<Collection, Key extends (string | number)> =
+	Collection extends UnknownArray
+		? Collection[Key extends keyof Collection ? Key : never]
+		: {[K in keyof Collection as `${K extends (string | number) ? K : never}` extends `${Key}` ? K : never]: Collection[K]};
 
 /*
 Force `Get` if possible; otherwise, return `never`.
-type Test_Get_0 = _Get<{2: 'x'}, '2'>; // 'x'
-type Test_Get_1 = _Get<{'2': 'x'}, '2'>; // 'x'
-type Test_Get_2 = _Get<{2: 'x'}, 2>; // 'x'
-type Test_Get_3 = _Get<{'2': 'x'}, 2>; // 'x'
-type Test_Get_4 = _Get<['x', 'xx'], 0>; // 'x'
-type Test_Get_5 = _Get<['x', 'xx'], '0'>; // 'x'
-type Test_Get_6 = _Get<['x', 'xx'], '2'> // never
-type Test_Get_7 = _Get<{a: 'x'}, 'b'> // never
-type Test_Get_8 = _Get<[0,1,2], `${number}`> // 0 | 1 | 2
-type Test_Get_9 = _Get<string[], `${number}`> // string
+
+type TestForceGet_0 = ForceGet<{2: 'x'}, '2'>; // 'x'
+type TestForceGet_1 = ForceGet<{'2': 'x'}, '2'>; // 'x'
+type TestForceGet_2 = ForceGet<{2: 'x'}, 2>; // 'x'
+type TestForceGet_3 = ForceGet<{'2': 'x'}, 2>; // 'x'
+type TestForceGet_4 = ForceGet<['x', 'xx'], 0>; // 'x'
+type TestForceGet_5 = ForceGet<['x', 'xx'], '0'>; // 'x'
+type TestForceGet_6 = ForceGet<['x', 'xx'], '2'> // never
+type TestForceGet_7 = ForceGet<{a: 'x'}, 'b'> // never
+type TestForceGet_8 = ForceGet<[0,1,2], `${number}`> // 0 | 1 | 2
+type TestForceGet_9 = ForceGet<string[], `${number}`> // string
 */
-// [todo] rename
-type _Get<T, Key extends PropertyKey> =
-  Key extends keyof T
-    ? T[Key]
-    : Key extends string | number
-      ? StringToNumber<`${Key}`> extends infer Num extends number
-        ? IsNever<Num> extends false
-          ? `${Key}` extends `${keyof T extends (string | number) ? keyof T : never}`
-            ? T[(`${Key}` extends infer K extends keyof T ? K : never)] |
-              T[(Num extends infer K extends keyof T ? K : never)]
-            /* `${number}` case */
-            : `${Key}` extends `${infer N extends number}`
-              ? IsEqual<N, number> extends true
-                ? T extends Array<infer ArrayType>
-                  ? ArrayType
-                  : never
-                : never
-              : never
-          : never
-        : never
-      : never;
+type ForceGet<T, Key extends PropertyKey> =
+	Key extends keyof T
+		? T[Key]
+		: Key extends string | number
+			? StringToNumber<`${Key}`> extends infer Num extends number
+				? IsNever<Num> extends false
+					? `${Key}` extends `${keyof T extends (string | number) ? keyof T : never}`
+						? T[(`${Key}` extends infer K extends keyof T ? K : never)] | T[(Num extends infer K extends keyof T ? K : never)]
+						/* `${number}` case */
+						: `${Key}` extends `${infer N extends number}`
+							? [IsEqual<N, number>, T] extends [true, Array<infer ArrayType>]
+								? ArrayType
+								: never
+							: never
+					: never
+				: never
+			: never;
 
 /*
 Return a number which a string expresses; otherwise return `never`. 
@@ -76,61 +72,52 @@ type Test_CollKeyOf_5 = CollKeyOf<[0, 1], '3'>; // false
 type Test_CollKeyOf_6 = CollKeyOf<[0, 1], '-1'>; // false
 type Test_CollKeyOf_7 = CollKeyOf<[0, 1], `${number}`>; // true
 type Test_CollKeyOf_8 = CollKeyOf<Array<{a: 0}>, `${number}`>; // true
-type Test_CollKeyOf_9 = CollKeyOf<{0: 'a0'}, 0> // true
-type Test_CollKeyOf_10 = CollKeyOf<{'0': 'a0'}, 0> // true
-type Test_CollKeyOf_11 = CollKeyOf<{0: 'a0'}, '0'> // true
-type Test_CollKeyOf_12 = CollKeyOf<{'0': 'a0'}, 0> // true
+type Test_CollKeyOf_9 = CollKeyOf<{0: 'a0'}, 0>; // true
+type Test_CollKeyOf_10 = CollKeyOf<{'0': 'a0'}, 0>; // true
+type Test_CollKeyOf_11 = CollKeyOf<{0: 'a0'}, '0'>; // true
+type Test_CollKeyOf_12 = CollKeyOf<{'0': 'a0'}, 0>; // true
 */
 type CollKeyOf<A, K extends PropertyKey> = 
-  A extends UnknownArray
-    ? IsEqual<IsTuple<A>, true> extends false
-      ? K extends `${number}`
-        ? true
-      : K extends (string | number)
-        ? IsEqual<false, IsNegative<StringToNumber<`${K}`>>>
-      : 89
-    : K extends (string | number)
-      ? [A['length'], IsEqual<A['length'], number>] extends [number, false]
-        ? IsEqual<false, IsNegative<StringToNumber<`${K}`>>> extends true
-          ? GreaterThan<A['length'], StringToNumber<`${K}`>> extends true
-            ? true
-          : false
-        : false
-      : false
-    : false
-  : A extends object
-    ? K extends (string | number)
-      ? IsKeyOf<A, K>
-    : false
-  : false;
+	A extends UnknownArray
+		? IsEqual<IsTuple<A>, true> extends false
+			? K extends `${number}`
+				? true
+				: K extends (string | number)
+					? IsEqual<false, IsNegative<StringToNumber<`${K}`>>>
+					: never
+			: K extends (string | number)
+				? [A['length'], IsEqual<A['length'], number>, IsEqual<false, IsNegative<StringToNumber<`${K}`>>>, GreaterThan<A['length'], StringToNumber<`${K}`>>] extends [number, false, true, true]
+					? true
+					: false
+				: false
+		: A extends object
+			? K extends (string | number)
+				? IsKeyOf<A, K>
+				: false
+			: false;
 
 /* [todo] LooseKeyOf とかにしてもいい */
 type IsKeyOf<a, k extends string | number> = `${k}` extends `${keyof a extends (string | number) ? keyof a : never}` ? true : false;
 
-type GetOrSelf<a, k extends (number | string)> = (a extends any ? IsEqual<true, IsKeyOf<a, k>> extends true ? Get<a, `${k}`> : a : never);
+// type GetOrSelf<a, k extends (number | string)> = (a extends any ? IsEqual<true, IsKeyOf<a, k>> extends true ? Get<a, `${k}`> : a : never);
 
 // type PickOrSelf<a, k extends (number | string)> = (a extends any ? IsEqual<true, IsKeyOf<a, k>> extends true ? _Pick<a, k> : a : never);
 // type PickOrSelf<a, k extends (number | string)> = (a extends object ? IsEqual<true, IsKeyOf<a, k>> extends true ? _Pick<a, k> : never : a);
 /**/
 // [todo] use `TupleOf`
 
+/*
+
 type Test_PickOrSelf_0 = PickOrSelf<string, 'a'>; // string
 type Test_PickOrSelf_1 = PickOrSelf<{readonly a?: 0}, 'a'>; // {readonly a?: 0}
 type Test_PickOrSelf_2 = PickOrSelf<{2?: 0}, '2'>; // {2?: 0}
 type Test_PickOrSelf_3 = PickOrSelf<{2?: 0}, 2>; // {2?: 0}
 type Test_PickOrSelf_4 = PickOrSelf<{'2': 0}, 2>; // {'2': 0}
-
+*/
 type PickOrSelf<a, k extends (number | string)> = (a extends UnknownArray ? _Pick<a, k> : a extends object ? IsEqual<true, IsKeyOf<a, k>> extends true ? _Pick<a, k> : never : a);
 
-// type PickOrSelf<a, k extends (number | string)> = (a extends UnknownArray ? [...TupleOf<StringToNumber<`${k}`>>, _Pick<a, k>] : a extends object ? IsEqual<true, IsKeyOf<a, k>> extends true ? _Pick<a, k> : never : a);
+type LastOfUnion<T> = UnionToIntersection<T extends any ? () => T : never> extends () => (infer R)	? R : never;
 
-
-type LastOfUnion<T> =
-UnionToIntersection<T extends any ? () => T : never> extends () => (infer R)
-	? R
-	: never;
-
-// [todo] local
 type IsNever<MaybeNever> = IsEqual<never, MaybeNever>;
 
 /*
@@ -161,42 +148,42 @@ type CoerceKeyof<R> = R extends object ? keyof R extends (string | number) ? key
 
 /* `BuildObject` supporting `${number}`. */
 type Build<K extends PropertyKey, L, M extends object | UnknownArray> =
-  `${K extends string ? K : never}` extends `${infer N extends number}`
-    ? IsEqual<N, number> extends true
-      ? Array<L>
-      : BuildObject<K, L, M>
-    : BuildObject<K, L, M>;
+	`${K extends string ? K : never}` extends `${infer N extends number}`
+		? IsEqual<N, number> extends true
+			? Array<L>
+			: BuildObject<K, L, M>
+		: BuildObject<K, L, M>;
 
 /*
 Coerce with union types including objects.
 */
 //type PickDeep<P, PathTree extends PathTreeType> = P extends object ? PathTree extends string ? ['pt', PathTree] : _PickDeep<P, PathTree, keyof PathTree> : P
-export type PickDeep<T, PathUnion extends Paths<T>> = PPPP<T, MergeNarrow<PathToTree<PathUnion>> extends infer M extends PathTreeType ? M : never>
+export type PickDeep<T, PathUnion extends Paths<T>> = InternalPickDeep<T, MergeNarrow<PathToTree<PathUnion>> extends infer M extends PathTreeType ? M : never>
 
-type PPPP<P, PathTree extends PathTreeType> =
-  P extends UnknownArray
-    ? [_PickDeep<P, PathTree, keyof PathTree>][0]
-    : P extends object
-      ? [_PickDeep<P, PathTree, keyof PathTree>][0]
-      : P;
+type InternalPickDeep<Parent, PathTree extends PathTreeType> =
+	Parent extends UnknownArray
+		? [_PickDeep<Parent, PathTree, keyof PathTree>][0]
+		: Parent extends object
+			? [_PickDeep<Parent, PathTree, keyof PathTree>][0]
+			: Parent;
 
 
 
-type RecursionPickDeep<Parent, NextParent, NextPathTree> = 
-  NextParent extends infer AAA extends UnknownArray
+type RecursionPickDeep<NextParent, NextPathTree extends PathTreeType> = 
+  NextParent extends infer NextParentArray extends UnknownArray
     /* NextParent: array */
-    ? IsEqual<IsTuple<AAA>, false> extends true
+    ? IsEqual<IsTuple<NextParentArray>, false> extends true
     /* Via tuple to prevent distribution. */
-      ? [AAA extends Array<infer _>
+      ? [NextParentArray extends Array<infer _>
         /* if end */
-        ? _Get<NextPathTree, CoerceKeyof<NextPathTree>> extends LeafMark
+        ? ForceGet<NextPathTree, CoerceKeyof<NextPathTree>> extends LeafMark
           ? IsEqual<`${number}`, `${CoerceKeyof<NextPathTree>}`> extends true
             /* `leadingSpreadArray2_Actual` in `test-d/pick-deep.ts` */
             ? [NextParent, Array<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>][0]
             /* `tailingSpreadArray1_Actual` in `test-d/pick-deep.ts` */
             : [...TupleOf<StringToNumber<`${CoerceKeyof<NextPathTree>}`>>, PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>]
        /* not end */
-       : PPPP<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>, _Get<NextPathTree, CoerceKeyof<NextPathTree>> extends infer G extends PathTreeType ? G: never> extends infer Result
+       : InternalPickDeep<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>, ForceGet<NextPathTree, CoerceKeyof<NextPathTree>> extends infer G extends PathTreeType ? G: never> extends infer Result
          ? IsEqual<`${number}`, `${CoerceKeyof<NextPathTree>}`> extends true
            /* `leadingSpreadArray1_Actual` in `test-d/pick-deep.ts` */
            ? [Array<Result>][0]
@@ -204,20 +191,10 @@ type RecursionPickDeep<Parent, NextParent, NextPathTree> =
            : [[...TupleOf<StringToNumber<`${CoerceKeyof<NextPathTree>}`>>, Result]][0]
         : never
      : never][0]
-     // [todo] refac
-   /* NextParent: tuple */
-   : [ // PickOrSelf<
-       //    NextParent
-       // 	, CoerceKeyof<NextPathTree>>
-       // 	,
-       PPPP< NextParent
-  	      , NextPathTree extends PathTreeType ? NextPathTree : never >
-      ][0]
+    /* NextParent: tuple */
+   : [InternalPickDeep<NextParent, NextPathTree>][0]
   /* NextParent: object */
-  : [PPPP<Simplify<PickOrSelf<NextParent, CoerceKeyof<Simplify<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>>>>, NextPathTree extends PathTreeType ? NextPathTree : never>][0]
-
-
-
+  : [InternalPickDeep<Simplify<PickOrSelf<NextParent, CoerceKeyof<Simplify<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>>>>, NextPathTree>][0];
 
 type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> =
   LastOfUnion<K> extends infer L extends keyof PathTree
@@ -226,59 +203,10 @@ type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> 
         ? IsEqual<true, CollKeyOf<Parent, L>> extends true
           /* Detect an end of path. */
           ? IsEqual<LeafMark, PathTree[L]> extends true
-              ? // Parent extends UnknownArray
-                // /* `${number}` case. */
-                // ? never
-                // // ? IsEqual<IsTuple<Parent>, false> extends true
-                // //   ? 'never' 
-                // //   : PickOrSelf<Parent, L> 
-                // /*  */
-                // : 
-                MergeOnlyObjectUnion<Simplify<PickOrSelf<Parent, L>> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
-              : _Get<PathTree, L> extends infer NextPathTree
-                ? _Get<Parent, L> extends infer NextParent
-                ? MergeOnlyObjectUnion<
-Simplify<
-  Build<
-L, 
-
-NextParent extends infer AAA extends UnknownArray
-  /* NextParent: array */
-  ? IsEqual<IsTuple<AAA>, false> extends true
-              /* Via tuple to prevent distribution. */
-    ? [AAA extends Array<infer _>
-      ? _Get<NextPathTree, CoerceKeyof<NextPathTree>> extends LeafMark
-        ? IsEqual<`${number}`, `${CoerceKeyof<NextPathTree>}`> extends true
-          /* `leadingSpreadArray2_Actual` in `test-d/pick-deep.ts` */
-          ? [NextParent, Array<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>][0]
-          /* `tailingSpreadArray1_Actual` in `test-d/pick-deep.ts` */
-          : [...TupleOf<StringToNumber<`${CoerceKeyof<NextPathTree>}`>>, PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>]
-        /* not end */
-        : PPPP<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>, _Get<NextPathTree, CoerceKeyof<NextPathTree>> extends infer G extends PathTreeType
-            ? G
-            : never> extends infer Result
-              ? IsEqual<`${number}`, `${CoerceKeyof<NextPathTree>}`> extends true
-                /* `leadingSpreadArray1_Actual` in `test-d/pick-deep.ts` */
-                ? [Array<Result>][0]
-                /* `tailingSpreadArray2_Actual` in `test-d/pick-deep.ts`. */
-                : [[...TupleOf<StringToNumber<`${CoerceKeyof<NextPathTree>}`>>, Result]][0]
-              : never
-      : never][0]
-      // [todo] refac
-    /* NextParent: tuple */
-    : [ PickOrSelf<
-          NextParent
-  	, CoerceKeyof<PathTree[L]>>
-  	, PPPP< NextParent
-  	      , PathTree[L] extends PathTreeType ? PathTree[L] : never >
-      ][1]
-  /* NextParent: object */
-  : [PPPP<Simplify<PickOrSelf<NextParent, CoerceKeyof<Simplify<PickOrSelf<NextParent, CoerceKeyof<PathTree[L]>>>>>>, PathTree[L] extends PathTreeType ? PathTree[L] : never>][0],
-
- Parent extends object ? Parent : never
->>
-                  | _PickDeep<Parent, PathTree, Exclude<K, L>>
-                >
+              ? MergeOnlyObjectUnion<Simplify<PickOrSelf<Parent, L>> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
+              : ForceGet<PathTree, L> extends infer NextPathTree extends PathTreeType
+                ? ForceGet<Parent, L> extends infer NextParent
+                ? MergeOnlyObjectUnion<Simplify<Build<L, RecursionPickDeep<NextParent, NextPathTree>, Parent extends object ? Parent : never>> | _PickDeep<Parent, PathTree, Exclude<K, L>>> // [todo] refac recur
           : never // [todo] infer
           : never // [todo] infer
           : never
@@ -290,26 +218,23 @@ NextParent extends infer AAA extends UnknownArray
 // これらもテストケースとして追加する
 type panda = {a: string | {b: 1 | true, c: 2, d: {g: {f: 9, h: 10}}} | {b: '1', c: '2'}, x: 10 | 11, y: [[0, 1], 2, 3]}
 type pandsak = MergeNarrow<PathToTree<`a.${'b' | 'c'}` | 'x'>>
-type Path = PPPP<panda, pandsak>
+type Path = InternalPickDeep<panda, pandsak>
 type pandsak1 = MergeNarrow<PathToTree<`a.d.g.f`>>
-type Path1 = PPPP<panda, pandsak1>
+type Path1 = InternalPickDeep<panda, pandsak1>
 type pandsak2 = MergeNarrow<PathToTree<`y.0`>>
-type Path2 = PPPP<panda, pandsak2>
+type Path2 = InternalPickDeep<panda, pandsak2>
 
 type landda = {0: string}
 type landdsak = MergeNarrow<PathToTree<`0`>>
-type Path3 = PPPP<landda, landdsak>
+type Path3 = InternalPickDeep<landda, landdsak>
 
 type landda1 = {'2': {0: string}}
 type landdsak1 = MergeNarrow<PathToTree<`2.0`>>
-type Path4 = PPPP<landda1, landdsak1>
+type Path4 = InternalPickDeep<landda1, landdsak1>
 
 type jkafje = [[[111, 222,333], 22, 33], 1, 2]
 type jakdf = MergeNarrow<PathToTree<`0.${number}.${number}`>>
-type Path5 = PPPP<jkafje, jakdf>
-
-// type aaget = _Get<landda1, 2>
-
+type Path5 = InternalPickDeep<jkafje, jakdf> // [todo] ?
 
 type LeafMark = ''
 type PathTreeType = {[K in string]: PathTreeType | LeafMark}
