@@ -156,8 +156,13 @@ type Build<K extends PropertyKey, L, M extends object | UnknownArray> =
 	`${K extends string ? K : never}` extends `${infer N extends number}`
 		? IsEqual<N, number> extends true
 			? L[]
-			: BuildObject<K, L, M>
+			: M extends UnknownArray
+				? [...TupleOf<N>, L]
+				: BuildObject<K, L, M>
 		: BuildObject<K, L, M>;
+
+/* Just rename */
+type As<Source, T> = Extract<Source, T>;
 
 /**
 Pick properties from a deeply-nested object.
@@ -234,40 +239,36 @@ export type PickDeep<T, PathUnion extends Paths<T>> = InternalPickDeep<T, MergeT
 
 type InternalPickDeep<Parent, PathTree extends PathTreeType> =
 	Parent extends UnknownArray
-		? [_PickDeep<Parent, PathTree, keyof PathTree>][0]
+		? _PickDeep<Parent, PathTree, keyof PathTree>
 		: Parent extends object
-			? [_PickDeep<Parent, PathTree, keyof PathTree>][0]
+			? _PickDeep<Parent, PathTree, keyof PathTree>
 			: Parent;
 
 type RecursionPickDeep<NextParent, NextPathTree extends PathTreeType> =
 	NextParent extends infer NextParentArray extends UnknownArray
 		/* NextParent: array */
 		? IsEqual<IsTuple<NextParentArray>, false> extends true
-			/* Via tuple to prevent distribution. */
-			? [NextParentArray extends Array<infer _>
+			? NextParentArray extends Array<infer _>
 				/* If end */
 				? ForceGet<NextPathTree, CoerceKeyof<NextPathTree>> extends LeafMark
 					? IsEqual<`${number}`, `${CoerceKeyof<NextPathTree>}`> extends true
 						/* `leadingSpreadArray2_Actual` in `test-d/pick-deep.ts` */
-						? [NextParent, Array<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>][0]
+						? NextParent
 						/* `tailingSpreadArray1_Actual` in `test-d/pick-deep.ts` */
 						: [...TupleOf<StringToNumber<`${CoerceKeyof<NextPathTree>}`>>, PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>]
 					/* Not end */
 					: InternalPickDeep<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>, ForceGet<NextPathTree, CoerceKeyof<NextPathTree>> extends infer G extends PathTreeType ? G : never> extends infer Result
 						? IsEqual<`${number}`, `${CoerceKeyof<NextPathTree>}`> extends true
 							/* `leadingSpreadArray1_Actual` in `test-d/pick-deep.ts` */
-							? [Result[]][0]
+							? Result[]
 							/* `tailingSpreadArray2_Actual` in `test-d/pick-deep.ts`. */
-							: [[...TupleOf<StringToNumber<`${CoerceKeyof<NextPathTree>}`>>, Result]][0]
+							: [...TupleOf<StringToNumber<`${CoerceKeyof<NextPathTree>}`>>, Result]
 						: never
-				: never][0]
+				: never
 			/* NextParent: tuple */
-			: [InternalPickDeep<NextParent, NextPathTree>][0]
+			: InternalPickDeep<NextParent, NextPathTree>
 		/* NextParent: object */
-		: [InternalPickDeep<Simplify<PickOrSelf<NextParent, CoerceKeyof<Simplify<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>>>>, NextPathTree>][0];
-
-/* Just rename */
-type As<Source, T> = Extract<Source, T>;
+		: InternalPickDeep<Simplify<PickOrSelf<NextParent, CoerceKeyof<Simplify<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>>>>, NextPathTree>;
 
 type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> =
 	LastOfUnion<K> extends infer L extends keyof PathTree
@@ -276,7 +277,11 @@ type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> 
 				? IsEqual<true, IsKeyOf<Parent, L>> extends true
 					/* Detect an end of path. */
 					? IsEqual<LeafMark, PathTree[L]> extends true
-						? MergeOnlyObjectUnion<Simplify<PickOrSelf<Parent, L>> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
+						? PickOrSelf<Parent, L> extends infer PickResult
+							? PickResult extends UnknownArray
+								? MergeOnlyObjectUnion<Simplify<[...TupleOf<StringToNumber<`${L}`>>, PickResult]> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
+								: MergeOnlyObjectUnion<Simplify<PickResult> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
+							: never
 						: MergeOnlyObjectUnion<Simplify<Build<L, RecursionPickDeep<ForceGet<Parent, L>, As<ForceGet<PathTree, L>, PathTreeType>>, As<Parent, object>>> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
 					: never
 				: never

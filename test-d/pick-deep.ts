@@ -201,5 +201,9 @@ type unionKeyObjectArrayArray_Expected = {arr: Array<Array<{b: number; c: boolea
 expectType<true>({} as IsEqual<unionKeyObjectArrayArray_Actual, unionKeyObjectArrayArray_Expected>);
 
 type unionSameKeysObject_Actual = PickDeep<{a: string | {b: 1 | true; c: 2; d: {g: {f: 9; h: 10}}} | {b: '1'; c: '2'}; x: 10 | 11; y: [[0, 1], 2, 3]}, `a.${'b' | 'c'}` | 'x'>;
-type unionSameKeysObject_Expected = {x: 10 | 11; a: string | {b: 1 | true; c: 2} | {b: '1'; c: '2';}}
-expectType<true>({} as IsEqual<unionSameKeysObject_Actual, unionSameKeysObject_Expected>)
+type unionSameKeysObject_Expected = {x: 10 | 11; a: string | {b: 1 | true; c: 2} | {b: '1'; c: '2'}};
+expectType<true>({} as IsEqual<unionSameKeysObject_Actual, unionSameKeysObject_Expected>);
+
+type unionTupleTuple_Actual = PickDeep<[0, string | [1, [2]]], '1.1'>;
+type unionTupleTuple_Expected = [unknown, string | [unknown, [2]]];
+expectType<true>({} as IsEqual<unionTupleTuple_Actual, unionTupleTuple_Expected>);
