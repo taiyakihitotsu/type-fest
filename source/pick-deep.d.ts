@@ -124,7 +124,14 @@ type PickOrSelf<A, K extends (number | string)> =
 
 type LastOfUnion<T> = UnionToIntersection<T extends any ? () => T : never> extends () => (infer R)	? R : never;
 
-type IsNever<MaybeNever> = IsEqual<never, MaybeNever>;
+// This version fails the `equalWrappedTupleIntersectionToBeNeverAndNeverExpanded` test in `test-d/is-equal.ts`.
+type _IsEqual<A, B> =
+	(<G>() => G extends A & G | G ? 1 : 2) extends
+	(<G>() => G extends B & G | G ? 1 : 2)
+		? true
+		: false;
+
+type IsNever<MaybeNever> = _IsEqual<never, MaybeNever>;
 
 /*
 Merge objects of union type; othewise returns itself.
