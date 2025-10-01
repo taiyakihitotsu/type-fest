@@ -12,11 +12,15 @@ import type {UnionToIntersection} from './union-to-intersection.d.ts';
 import type {UnknownArray} from './unknown-array.d.ts';
 
 /*
+`Pick<{0: 0}, '0'>` doesn't work but `ForcePick` does.
 
-Type Test_Pick_0 = _Pick<[0,1], 1>; // 1
-type Test_Pick_1 = _Pick<{a: 'aa'}, 'a'>; // {a: 'aa'}
+type Test_ForcePick_0 = ForcePick<[0,1], 1>; // 1
+type Test_ForcePick_1 = ForcePick<{0: 'aa'}, '0'>; // {0: 'aa'}
+type Test_ForcePick_2 = ForcePick<{'0': 'aa'}, '0'>; // {'0': 'aa'}
+type Test_ForcePick_3 = ForcePick<{0: 'aa'}, 0>; // {0: 'aa'}
+type Test_ForcePick_4 = ForcePick<{'0': 'aa'}, 0>; // {'0': 'aa'}
 */
-type _Pick<Collection, Key extends (string | number)> =
+type ForcePick<Collection, Key extends (string | number)> =
 	Collection extends UnknownArray
 		? Collection[Key extends keyof Collection ? Key : never]
 		: {[K in keyof Collection as `${K extends (string | number) ? K : never}` extends `${Key}` ? K : never]: Collection[K]};
@@ -61,23 +65,24 @@ type Test_StringToNumber_1 = StringToNumber<'0'>; // 0
 */
 type StringToNumber<T extends string> = T extends `${infer N extends number}` ? N : never;
 
-// [todo] 一旦これで書いてるけど後でIsKeyOfに統合したい
 /*
-type Test_CollKeyOf_0 = CollKeyOf<[0, 1], 1>; // true
-type Test_CollKeyOf_1 = CollKeyOf<[0, 1], 3>; // false
-type Test_CollKeyOf_2 = CollKeyOf<[0, 1], -1>; // false
-type Test_CollKeyOf_3 = CollKeyOf<[0, 1], 's'>; // false
-type Test_CollKeyOf_4 = CollKeyOf<[0, 1], '1'>; // true
-type Test_CollKeyOf_5 = CollKeyOf<[0, 1], '3'>; // false
-type Test_CollKeyOf_6 = CollKeyOf<[0, 1], '-1'>; // false
-type Test_CollKeyOf_7 = CollKeyOf<[0, 1], `${number}`>; // true
-type Test_CollKeyOf_8 = CollKeyOf<Array<{a: 0}>, `${number}`>; // true
-type Test_CollKeyOf_9 = CollKeyOf<{0: 'a0'}, 0>; // true
-type Test_CollKeyOf_10 = CollKeyOf<{'0': 'a0'}, 0>; // true
-type Test_CollKeyOf_11 = CollKeyOf<{0: 'a0'}, '0'>; // true
-type Test_CollKeyOf_12 = CollKeyOf<{'0': 'a0'}, 0>; // true
+True if a key is theoretically accessible to a value of A; otherwise returns false.
+
+type Test_IsKeyOf_0 = IsKeyOf<[0, 1], 1>; // true
+type Test_IsKeyOf_1 = IsKeyOf<[0, 1], 3>; // false
+type Test_IsKeyOf_2 = IsKeyOf<[0, 1], -1>; // false
+type Test_IsKeyOf_3 = IsKeyOf<[0, 1], 's'>; // false
+type Test_IsKeyOf_4 = IsKeyOf<[0, 1], '1'>; // true
+type Test_IsKeyOf_5 = IsKeyOf<[0, 1], '3'>; // false
+type Test_IsKeyOf_6 = IsKeyOf<[0, 1], '-1'>; // false
+type Test_IsKeyOf_7 = IsKeyOf<[0, 1], `${number}`>; // true
+type Test_IsKeyOf_8 = IsKeyOf<Array<{a: 0}>, `${number}`>; // true
+type Test_IsKeyOf_9 = IsKeyOf<{0: 'a0'}, 0>; // true
+type Test_IsKeyOf_10 = IsKeyOf<{'0': 'a0'}, 0>; // true
+type Test_IsKeyOf_11 = IsKeyOf<{0: 'a0'}, '0'>; // true
+type Test_IsKeyOf_12 = IsKeyOf<{'0': 'a0'}, 0>; // true
 */
-type CollKeyOf<A, K extends PropertyKey> =
+type IsKeyOf<A, K extends PropertyKey> =
 	A extends UnknownArray
 		? IsEqual<IsTuple<A>, true> extends false
 			? K extends `${number}`
@@ -92,21 +97,15 @@ type CollKeyOf<A, K extends PropertyKey> =
 				: false
 		: A extends object
 			? K extends (string | number)
-				? IsKeyOf<A, K>
+				? `${K}` extends `${keyof A extends (string | number) ? keyof A : never}`
+					? true
+					: false
 				: false
 			: false;
 
-// [todo] dup
-type IsKeyOf<a, k extends string | number> = `${k}` extends `${keyof a extends (string | number) ? keyof a : never}` ? true : false;
-
-// Type GetOrSelf<a, k extends (number | string)> = (a extends any ? IsEqual<true, IsKeyOf<a, k>> extends true ? Get<a, `${k}`> : a : never);
-
-// type PickOrSelf<a, k extends (number | string)> = (a extends any ? IsEqual<true, IsKeyOf<a, k>> extends true ? _Pick<a, k> : a : never);
-// type PickOrSelf<a, k extends (number | string)> = (a extends object ? IsEqual<true, IsKeyOf<a, k>> extends true ? _Pick<a, k> : never : a);
-/**/
-// [todo] use `TupleOf`
-
 /*
+Identity if A is not object; otherwise returns Pick<A, K> if object, or return A[K] if UnknownArray.
+This behavior fixes https://github.com/sindresorhus/type-fest/issues/1224.
 
 type Test_PickOrSelf_0 = PickOrSelf<string, 'a'>; // string
 type Test_PickOrSelf_1 = PickOrSelf<{readonly a?: 0}, 'a'>; // {readonly a?: 0}
@@ -114,16 +113,23 @@ type Test_PickOrSelf_2 = PickOrSelf<{2?: 0}, '2'>; // {2?: 0}
 type Test_PickOrSelf_3 = PickOrSelf<{2?: 0}, 2>; // {2?: 0}
 type Test_PickOrSelf_4 = PickOrSelf<{'2': 0}, 2>; // {'2': 0}
 */
-type PickOrSelf<a, k extends (number | string)> = (a extends UnknownArray ? _Pick<a, k> : a extends object ? IsEqual<true, IsKeyOf<a, k>> extends true ? _Pick<a, k> : never : a);
+type PickOrSelf<A, K extends (number | string)> =
+	A extends UnknownArray
+		? ForcePick<A, K>
+		: A extends object
+			? IsEqual<true, IsKeyOf<A, K>> extends true
+				? ForcePick<A, K>
+				: never
+			: A;
 
 type LastOfUnion<T> = UnionToIntersection<T extends any ? () => T : never> extends () => (infer R)	? R : never;
 
 type IsNever<MaybeNever> = IsEqual<never, MaybeNever>;
 
 /*
-Merge only objects of union type.
+Merge objects of union type; othewise returns itself.
 
-type Test_MergeOnlyObjectUnion = MergeOnlyObjectUnion<0 | string | {readonly a: 0} | {b?: 2} | [0] | [1]>; // string | 0 | [0] | [1] | {readonly a: 0; b?: 2}
+type Test_MergeOnlyObjectUnion_0 = MergeOnlyObjectUnion<0 | string | {readonly a: 0} | {b?: 2} | [0] | [1]>; // string | 0 | [0] | [1] | {readonly a: 0; b?: 2}
 */
 type MergeOnlyObjectUnion<MaybeObjectUnion> = _MergeOnlyObjectUnion<MaybeObjectUnion>;
 type _MergeOnlyObjectUnion<MaybeObjectUnion, ObjectStack = {}, UnionStack = never> =
@@ -140,7 +146,7 @@ type _MergeOnlyObjectUnion<MaybeObjectUnion, ObjectStack = {}, UnionStack = neve
 /*
 This doesn't fail with non-object type, to safely support `keyof` with union types including objects.
 
-type Test_CoerceKeyof = CoerceKeyof<string | {x: 0}>;
+type Test_CoerceKeyof_0 = CoerceKeyof<string | {x: 0}>;
 // "x"
 */
 type CoerceKeyof<R> = R extends object ? keyof R extends (string | number) ? keyof R : never : never;
@@ -267,7 +273,7 @@ type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> 
 	LastOfUnion<K> extends infer L extends keyof PathTree
 		? IsNever<L> extends false
 			? L extends number | string
-				? IsEqual<true, CollKeyOf<Parent, L>> extends true
+				? IsEqual<true, IsKeyOf<Parent, L>> extends true
 					/* Detect an end of path. */
 					? IsEqual<LeafMark, PathTree[L]> extends true
 						? MergeOnlyObjectUnion<Simplify<PickOrSelf<Parent, L>> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
@@ -277,28 +283,8 @@ type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> 
 			: never
 		: never;
 
-// [todo]
-// これらもテストケースとして追加する
-type panda = {a: string | {b: 1 | true; c: 2; d: {g: {f: 9; h: 10}}} | {b: '1'; c: '2'}; x: 10 | 11; y: [[0, 1], 2, 3]};
-type pandsak = MergeTree<PathToTree<`a.${'b' | 'c'}` | 'x'>>;
-type Path = InternalPickDeep<panda, pandsak>;
-type pandsak1 = MergeTree<PathToTree<'a.d.g.f'>>;
-type Path1 = InternalPickDeep<panda, pandsak1>;
-type pandsak2 = MergeTree<PathToTree<'y.0'>>;
-type Path2 = InternalPickDeep<panda, pandsak2>;
-type landda = {0: string};
-type landdsak = MergeTree<PathToTree<'0'>>;
-type Path3 = InternalPickDeep<landda, landdsak>;
-type landda1 = {'2': {0: string}};
-type landdsak1 = MergeTree<PathToTree<'2.0'>>;
-type Path4 = InternalPickDeep<landda1, landdsak1>;
-type jkafje = [[[111, 222, 333], 22, 33], 1, 2];
-type jakdf = MergeTree<PathToTree<`0.${number}.${number}`>>;
-type Path5 = InternalPickDeep<jkafje, jakdf>; // [todo] ?
-
-type LeafMark = '';
-type PathTreeType = {[K in string]: PathTreeType | LeafMark};
 /*
+Convert path literal to tree.
 
 Type Test_PathToTree = MergeNarrow<PathToTree<`a.b.${'c'|'d'}.x` | `d.b.${'c'|'d'}`>>;
 // {d: {b: {d: ''; c: ''}};
@@ -311,7 +297,13 @@ type PathToTree<S> =
 			: {[K in F]: {[L in Next]: LeafMark}}
 		: {[K in S extends string ? S : never]: LeafMark};
 
+type LeafMark = '';
+type PathTreeType = {[K in string]: PathTreeType | LeafMark};
+
 /*
+Merge objects of union tree.
+
+type Test_MergeTree_0 = MergeTree<{a: {b: ''}} | {a: {c: ''}}>; // {a: {b: ''; c: '';}}
 */
 type MergeTree<T, M extends object = never> =
 	LastOfUnion<T> extends infer L
