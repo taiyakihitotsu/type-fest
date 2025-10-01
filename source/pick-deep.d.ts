@@ -277,7 +277,7 @@ type RecursionPickDeep<NextParent, NextPathTree extends PathTreeType> =
 		/* NextParent: object */
 		: InternalPickDeep<Simplify<PickOrSelf<NextParent, CoerceKeyof<Simplify<PickOrSelf<NextParent, CoerceKeyof<NextPathTree>>>>>>, NextPathTree>;
 
-type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> =
+type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree, U = never> =
 	LastOfUnion<K> extends infer L extends keyof PathTree
 		? IsNever<L> extends false
 			? L extends number | string
@@ -286,14 +286,14 @@ type _PickDeep<Parent, PathTree extends PathTreeType, K extends keyof PathTree> 
 					? IsEqual<LeafMark, PathTree[L]> extends true
 						? PickOrSelf<Parent, L> extends infer PickResult
 							? PickResult extends UnknownArray
-								? MergeOnlyObjectUnion<Simplify<[...TupleOf<StringToNumber<`${L}`>>, PickResult]> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
-								: MergeOnlyObjectUnion<Simplify<PickResult> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
+								? _PickDeep<Parent, PathTree, Exclude<K, L>, U | Simplify<[...TupleOf<StringToNumber<`${L}`>>, PickResult]>>
+								: _PickDeep<Parent, PathTree, Exclude<K, L>, U | Simplify<PickResult>>
 							: never
-						: MergeOnlyObjectUnion<Simplify<Build<L, RecursionPickDeep<ForceGet<Parent, L>, As<ForceGet<PathTree, L>, PathTreeType>>, As<Parent, object>>> | _PickDeep<Parent, PathTree, Exclude<K, L>>>
+						: _PickDeep<Parent, PathTree, Exclude<K, L>, U | Simplify<Build<L, RecursionPickDeep<ForceGet<Parent, L>, As<ForceGet<PathTree, L>, PathTreeType>>, As<Parent, object>>>>
 					: never
 				: never
 			: never
-		: never;
+		: MergeOnlyObjectUnion<U>;
 
 /*
 Convert path literal to tree.
