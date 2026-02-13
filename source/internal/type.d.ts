@@ -6,6 +6,7 @@ import type {Primitive} from '../primitive.d.ts';
 import type {UnknownArray} from '../unknown-array.d.ts';
 import type {UnionToIntersection} from '../union-to-intersection.d.ts';
 import type {SimplifyDeep} from '../simplify-deep.d.ts';
+import type {UnionToTuple} from '../union-to-tuple.d.ts';
 
 /**
 Matches any primitive, `void`, `Date`, or `RegExp` value.
@@ -237,20 +238,7 @@ type _UniqueUnionDeep<U extends object> = {[K in keyof U]: U[K] extends object ?
 /**
 The flat version of `UniqueUnionDeep`.
 */
-export type UniqueUnion<U> = _UniqueUnion<U, never>;
-type _UniqueUnion<U, R> =
-	LastOfUnion<U> extends infer K
-		? [K] extends [never]
-			? R
-			: _UniqueUnion<
-				ExcludeExactly<U, K>,
-				(<G>() => G extends K & G | G ? 1 : 2) extends
-				(<G>() => G extends R & G | G ? 1 : 2)
-					? [R, unknown] extends [never, K]
-						? K
-						: R
-					: R | K>
-		: never;
+export type UniqueUnion<U> = UnionToTuple<U>[number];
 
 /**
 TypeScript's built-in `Exclude` and `ExcludeStrict` in `type-fest` don't distinguish kinds of keys of objects.

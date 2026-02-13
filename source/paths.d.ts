@@ -77,10 +77,10 @@ export type PathsOptions = {
 	};
 
 	type AllPaths = Paths<Post, {leavesOnly: false}>;
-	//=> 'id' | 'author' | 'author.id' | 'author.name' | 'author.name.first' | 'author.name.last'
+	// => 'id' | 'author' | 'author.id' | 'author.name' | 'author.name.first' | 'author.name.last'
 
 	type LeafPaths = Paths<Post, {leavesOnly: true}>;
-	//=> 'id' | 'author.id' | 'author.name.first' | 'author.name.last'
+	// => 'id' | 'author.id' | 'author.name.first' | 'author.name.last'
 	```
 
 	@example
@@ -124,16 +124,16 @@ export type PathsOptions = {
 	};
 
 	type DepthZero = Paths<Post, {depth: 0}>;
-	//=> 'id' | 'author'
+	// => 'id' | 'author'
 
 	type DepthOne = Paths<Post, {depth: 1}>;
-	//=> 'author.id' | 'author.name'
+	// => 'author.id' | 'author.name'
 
 	type DepthTwo = Paths<Post, {depth: 2}>;
-	//=> 'author.name.first' | 'author.name.last'
+	// => 'author.name.first' | 'author.name.last'
 
 	type LeavesAtDepthOne = Paths<Post, {leavesOnly: true; depth: 1}>;
-	//=> 'author.id'
+	// => 'author.id'
 	```
 	*/
 	depth?: number;

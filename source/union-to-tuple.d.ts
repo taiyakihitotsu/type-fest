@@ -1,5 +1,6 @@
 import type {IsNever} from './is-never.d.ts';
 import type {UnionToIntersection} from './union-to-intersection.d.ts';
+import type {ExcludeExactly} from './internal/type.d.ts';
 
 /**
 Returns the last element of a union type.
@@ -52,7 +53,7 @@ const petList = Object.keys(pets) as UnionToTuple<Pet>;
 */
 export type UnionToTuple<T, L = LastOfUnion<T>> =
 IsNever<T> extends false
-	? [...UnionToTuple<Exclude<T, L>>, L]
+	? [...UnionToTuple<ExcludeExactly<T, L>>, L]
 	: [];
 
 export {};
