@@ -53,7 +53,9 @@ const petList = Object.keys(pets) as UnionToTuple<Pet>;
 */
 export type UnionToTuple<T, L = LastOfUnion<T>> =
 IsNever<T> extends false
-	? [...UnionToTuple<ExcludeExactly<T, L>>, L]
+	? UnionToTuple<ExcludeExactly<T, L>> extends infer E extends unknown[]
+		? [...E, L]
+		: never
 	: [];
 
 export {};
